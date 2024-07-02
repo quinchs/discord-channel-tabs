@@ -247,6 +247,11 @@ export const TabBar = (props: Props) => {
                 : undefined
         };
 
+        if(tabs.length === 0 ){
+            setTabs([tab]);
+            saveTabsState([tab]);
+        }
+
         // find the closest element
         const element = Array.from(tabRefs.current.entries())
             .filter(x => !!x[1])
