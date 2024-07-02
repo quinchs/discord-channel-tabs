@@ -1,0 +1,1 @@
+﻿export const chatArea = () => document.getElementsByClassName("chat_a7d72e")[0]; 

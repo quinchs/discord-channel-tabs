@@ -1,0 +1,22 @@
+{
+	"compilerOptions": {
+		"noImplicitAny": true,
+		"target": "ESNEXT",
+		"module": "ESNext",
+		"jsx": "react",
+		"moduleResolution": "node",
+		"outDir": "../",
+		"removeComments": false,
+		"strict": true,
+		"alwaysStrict": false,
+		"esModuleInterop": true
+	},
+	"include": [
+		"src/**/*.ts",
+		"src/types/**/*.d.ts",
+	],
+	"exclude": [
+		"node_modules",
+		"node_modules/**/*.d.ts"
+	]
+}

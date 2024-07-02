@@ -1,0 +1,1 @@
+﻿export const UnreadStore = BdApi.Webpack.getModule(BdApi.Webpack.Filters.byProps("isEstimated"))! as any;
