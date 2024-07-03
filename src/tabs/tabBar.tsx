@@ -111,7 +111,10 @@ export const TabBar = (props: Props) => {
                 return;
             }
 
-            setTabs([...tabs, tab]);
+            const newTabs = [...tabs, tab];
+            setTabs(newTabs);
+            saveTabsState(newTabs)
+            selectChannel(tab.channelId, tab.guildId);
         });
 
         const onLocationChange = plugin.onLocationSwitch(() => {
