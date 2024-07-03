@@ -97,15 +97,15 @@ export const TabBar = (props: Props) => {
 
         const onAdd = plugin.onTabAdd(tab => {
             setCurrentTab(tab);
-
+            selectChannel(tab.channelId, tab.guildId);
+            
             if (tabs.find(x => x.channelId === tab.channelId)) {
                 return;
             }
 
             const newTabs = [...tabs, tab];
             setTabs(newTabs);
-            saveTabsState(newTabs)
-            selectChannel(tab.channelId, tab.guildId);
+            saveTabsState(newTabs);
         });
 
         const onLocationChange = plugin.onLocationSwitch(() => {
