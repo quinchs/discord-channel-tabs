@@ -1,4 +1,5 @@
 export default Dropdown;
+
 /**
  * Creates a dropdown using discord's built in dropdown.
  * @memberof module:Settings

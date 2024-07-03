@@ -1,5 +1,6 @@
 export default class Popouts {
     static initialize(): void;
+
     /**
      * Shows the user popout for a user relative to a target element
      * @param {HTMLElement} target - Element to show the popout in relation to
@@ -16,6 +17,7 @@ export default class Popouts {
         position?: string | undefined;
         align?: string | undefined;
     } | undefined): void;
+
     /**
      * Shows a react popout relative to a target element
      * @param {HTMLElement} target - Element to show the popout in relation to
@@ -33,6 +35,8 @@ export default class Popouts {
         nudgeAlignIntoViewport?: boolean | undefined;
         spacing?: number | undefined;
     } | undefined): number;
+
     static closePopout(id: any): null | undefined;
+
     static dispose(): void;
 }

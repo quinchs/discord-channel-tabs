@@ -1,4 +1,5 @@
 export default FilePicker;
+
 /**
  * Creates a file picker using chromium's default.
  * @memberof module:Settings

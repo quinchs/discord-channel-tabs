@@ -3,7 +3,7 @@ import {css, jsx} from '@emotion/react'
 import {getTabType, Tab} from "./tabsManager";
 import {connectStores} from "../discord/flux";
 import {UnreadStore} from "../discord/stores";
-import {LegacyRef, useEffect, useLayoutEffect, useRef} from "react";
+import {LegacyRef, useEffect, useRef} from "react";
 import styled from "@emotion/styled";
 import Spinner from "../discord/spinner";
 
@@ -121,15 +121,15 @@ const TabHeaderComponent = ({tab, innerRef, selected, onTabUpdated, ...state}: T
 
     const getFormattedUnreadCount = () => {
         let count = state.unreadCount?.toString();
-        
+
         if (count && state.unreadIsEstimate)
             count += '+';
-        
-        return count 
+
+        return count
             ? `${count} NEW`
             : 'NEW'
     }
-    
+
     return (
         <TabHeaderContent
             ref={innerRef}

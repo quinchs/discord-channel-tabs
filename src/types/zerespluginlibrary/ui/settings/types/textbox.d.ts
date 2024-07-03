@@ -1,4 +1,5 @@
 export default Textbox;
+
 /**
  * Creates a textbox using discord's built in textbox.
  * @memberof module:Settings

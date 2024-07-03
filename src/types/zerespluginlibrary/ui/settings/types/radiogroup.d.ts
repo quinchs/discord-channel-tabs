@@ -1,4 +1,5 @@
 export default RadioGroup;
+
 /**
  * @interface
  * @name module:Settings~RadioItem

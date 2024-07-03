@@ -1,4 +1,5 @@
 export default ColorPicker;
+
 /**
  * Creates a color picker using Discord's built in color picker
  * as a base. Input and output using hex strings.
@@ -6,8 +7,6 @@ export default ColorPicker;
  * @extends module:Settings.SettingField
  */
 declare class ColorPicker {
-    /** Default colors for ColorPicker */
-    static get presetColors(): number[];
     /**
      * @param {string} name - name label of the setting
      * @param {string} note - help/note to show underneath or above the setting
@@ -23,4 +22,7 @@ declare class ColorPicker {
         defaultColor?: string | undefined;
         colors?: number[] | undefined;
     } | undefined);
+
+    /** Default colors for ColorPicker */
+    static get presetColors(): number[];
 }

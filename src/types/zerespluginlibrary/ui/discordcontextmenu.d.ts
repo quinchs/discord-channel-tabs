@@ -124,6 +124,7 @@ export default class DiscordContextMenu {
     static buildMenuItem(props: {
         type?: string | undefined;
     }): object;
+
     /**
      * Creates the all the items **and groups** of a context menu recursively.
      * There is no hard limit to the number of groups within groups or number
@@ -168,6 +169,7 @@ export default class DiscordContextMenu {
      * }]);
      */
     static buildMenuChildren(setup: Array<object>): Array<object>;
+
     /**
      * Creates the menu *component* including the wrapping `ContextMenu`.
      * Calls {@link module:DiscordContextMenu.buildMenuChildren} under the covers.
@@ -176,6 +178,7 @@ export default class DiscordContextMenu {
      * @returns {function} the unique context menu component
      */
     static buildMenu(setup: Array<object>): Function;
+
     /**
      *
      * @param {MouseEvent} event - The context menu event. This can be emulated, requires target, and all X, Y locations.
@@ -192,6 +195,7 @@ export default class DiscordContextMenu {
         onClose?: Function | undefined;
         noBlurEvent?: boolean | undefined;
     }): any;
+
     /**
      * Attempts to find and return a specific context menu type's module. Useful
      * when patching the render of these menus.
@@ -200,6 +204,7 @@ export default class DiscordContextMenu {
      * @deprecated
      */
     static getDiscordMenu(nameOrFilter: string | Function): Promise<object>;
+
     /**
      * Calls `forceUpdate()` on all context menus it can find. Useful for
      * after patching a menu.

@@ -6,7 +6,7 @@
  * @param map A function to map props & store data
  */
 export const connectStores = <T, U>(
-    stores: any[], 
+    stores: any[],
     map: (props: U) => T
 ): (comp: ComponentType<U & T>) => ForwardRefExoticComponent<U> => {
     return ZLibrary.DiscordModules.Flux.connectStores(stores, map, {

@@ -1,6 +1,19 @@
 export default class Tooltip {
-    /** Alias for the constructor */
-    static create(node: any, text: any, options?: {}): Tooltip;
+    node: any;
+    label: any;
+    style: string;
+    side: string;
+    preventFlip: boolean;
+    isTimestamp: boolean;
+    disablePointerEvents: boolean;
+    disabled: boolean;
+    active: boolean;
+    element: HTMLElement | DocumentFragment | NodeList | undefined;
+    tooltipElement: HTMLElement | DocumentFragment | NodeList | undefined;
+    labelElement: any;
+    /** Use an observer in show otherwise you'll cause unclosable tooltips */
+    observer: any;
+
     /**
      *
      * @constructor
@@ -22,42 +35,44 @@ export default class Tooltip {
         disablePointerEvents?: boolean | undefined;
         disabled?: boolean | undefined;
     });
-    node: any;
-    label: any;
-    style: string;
-    side: string;
-    preventFlip: boolean;
-    isTimestamp: boolean;
-    disablePointerEvents: boolean;
-    disabled: boolean;
-    active: boolean;
-    element: HTMLElement | DocumentFragment | NodeList | undefined;
-    tooltipElement: HTMLElement | DocumentFragment | NodeList | undefined;
-    labelElement: any;
+
     /** Container where the tooltip will be appended. */
     get container(): any;
+
     /** Boolean representing if the tooltip will fit on screen above the element */
     get canShowAbove(): boolean;
+
     /** Boolean representing if the tooltip will fit on screen below the element */
     get canShowBelow(): boolean;
+
     /** Boolean representing if the tooltip will fit on screen to the left of the element */
     get canShowLeft(): boolean;
+
     /** Boolean representing if the tooltip will fit on screen to the right of the element */
     get canShowRight(): boolean;
+
+    /** Alias for the constructor */
+    static create(node: any, text: any, options?: {}): Tooltip;
+
     /** Hides the tooltip. Automatically called on mouseleave. */
     hide(): void;
+
     /** Shows the tooltip. Automatically called on mouseenter. Will attempt to flip if position was wrong. */
     show(): void;
-    /** Use an observer in show otherwise you'll cause unclosable tooltips */
-    observer: any;
+
     /** Force showing the tooltip above the node. */
     showAbove(): void;
+
     /** Force showing the tooltip below the node. */
     showBelow(): void;
+
     /** Force showing the tooltip to the left of the node. */
     showLeft(): void;
+
     /** Force showing the tooltip to the right of the node. */
     showRight(): void;
+
     centerHorizontally(): void;
+
     centerVertically(): void;
 }

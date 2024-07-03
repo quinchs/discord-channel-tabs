@@ -1,11 +1,20 @@
-import React from "react";
+import Listenable from "../../structs/listenable";
 
 export default SettingField;
+
 /**
  * Setting field to extend to create new settings
  * @memberof module:Settings
  */
 declare class SettingField extends Listenable {
+    name: string;
+    note: string;
+    inputWrapper: HTMLElement | DocumentFragment | NodeList;
+    type: any;
+    props: {
+        noteOnTop?: boolean | undefined;
+    };
+
     /**
      * @param {string} name - name label of the setting
      * @param {string} note - help/note to show underneath or above the setting
@@ -17,25 +26,24 @@ declare class SettingField extends Listenable {
     constructor(name: string, note: string, onChange: Function, settingtype: any, props?: {
         noteOnTop?: boolean | undefined;
     } | undefined);
-    name: string;
-    note: string;
-    inputWrapper: HTMLElement | DocumentFragment | NodeList;
-    type: any;
-    props: {
-        noteOnTop?: boolean | undefined;
-    };
+
     /** @returns {HTMLElement} - root element for setting */
     getElement(): HTMLElement;
+
     /** Fires onchange to listeners */
     onChange(...args: any[]): void;
+
     /** Fired when root node added to DOM */
     onAdded(): void;
+
     /** Fired when root node removed from DOM */
     onRemoved(): void;
 }
+
 export class ReactSetting {
     get noteElement(): any;
+
     get dividerElement(): any;
+
     render(): any;
 }
-import Listenable from "../../structs/listenable";

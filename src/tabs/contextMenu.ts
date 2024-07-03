@@ -1,4 +1,4 @@
-﻿import {createTabFromChannel, Tab} from "./tabsManager";
+﻿import {createTabFromChannel} from "./tabsManager";
 import Plugin from "../index";
 import {getOrCreatePrivateChannelForUser} from "../discord";
 

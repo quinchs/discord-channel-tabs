@@ -1,9 +1,14 @@
 export default SettingGroup;
+
 /**
  * Grouping of controls for easier management in settings panels.
  * @memberof module:Settings
  */
 declare class SettingGroup extends Listenable {
+    group: HTMLElement | DocumentFragment | NodeList;
+    label: any;
+    controls: any;
+
     /**
      * @param {string} groupName - title for the group of settings
      * @param {object} [options] - additional options for the group
@@ -16,19 +21,20 @@ declare class SettingGroup extends Listenable {
         collapsible?: boolean | undefined;
         shown?: boolean | undefined;
     } | undefined);
+
     /** Fires onchange to listeners */
     onChange(...args: any[]): void;
-    group: HTMLElement | DocumentFragment | NodeList;
-    label: any;
-    controls: any;
+
     /** @returns {HTMLElement} - root node for the group. */
     getElement(): HTMLElement;
+
     /**
      * Adds multiple nodes to this group.
      * @param {(...HTMLElement|...jQuery|...module:Settings.SettingField|...module:Settings.SettingGroup)} nodes - list of nodes to add to the group container
      * @returns {module:Settings.SettingGroup} - returns self for chaining
      */
     append(...nodes: any): any;
+
     /**
      * Appends this node to another
      * @param {HTMLElement} node - node to attach the group to.
@@ -36,4 +42,5 @@ declare class SettingGroup extends Listenable {
      */
     appendTo(node: HTMLElement): any;
 }
+
 import Listenable from "../../structs/listenable";

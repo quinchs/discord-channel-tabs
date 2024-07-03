@@ -1,5 +1,5 @@
 import ColorConverter from "./modules/colorconverter";
-import WebpackModules, { Filters } from "./modules/webpackmodules";
+import WebpackModules, {Filters} from "./modules/webpackmodules";
 import Patcher from "./modules/patcher";
 import Logger from "./modules/logger";
 import DiscordContextMenu from "./ui/discordcontextmenu";
@@ -34,6 +34,7 @@ import Switch from "./ui/settings/types/switch";
 import Dropdown from "./ui/settings/types/dropdown";
 import Keybind from "./ui/settings/types/keybind";
 import RadioGroup from "./ui/settings/types/radiogroup";
+
 interface Structs {
     Screen: typeof Screen;
     Selector: typeof Selector;
@@ -41,9 +42,11 @@ interface Structs {
     DOMObserver: typeof DOMObserver;
     Listenable: typeof Listenable;
 }
+
 interface Components {
     ErrorBoundary: typeof ErrorBoundary;
 }
+
 interface Settings {
     SettingField: typeof SettingField;
     SettingGroup: typeof SettingGroup;
@@ -57,6 +60,7 @@ interface Settings {
     Keybind: typeof Keybind;
     RadioGroup: typeof RadioGroup;
 }
+
 declare const BoundLogger: {
     stacktrace: (message: string, error: Error) => void;
     log: (...args: any[]) => void;
@@ -73,6 +77,7 @@ declare const BoundPatcher: {
     instead: (moduleToPatch: object, functionName: string, callback: any) => any;
     after: (moduleToPatch: object, functionName: string, callback: any) => any;
 };
+
 export interface API {
     DCM: typeof DiscordContextMenu;
     ContextMenu: typeof DiscordContextMenu;
@@ -99,14 +104,17 @@ export interface API {
     Structs: Structs;
     Components: Components;
 }
+
 export interface BoundAPI extends Omit<API, "Patcher" | "Logger"> {
     Patcher: typeof BoundPatcher;
     Logger: typeof BoundLogger;
 }
+
 declare const returned: any;
 export type Plugin = typeof returned;
 declare global {
     const ZLibrary: API;
+
     interface Window {
         ZLibrary: API;
     }

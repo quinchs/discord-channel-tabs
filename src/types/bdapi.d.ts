@@ -101,62 +101,52 @@ declare namespace BdApiModule {
      * lives easier.
      */
     class BdApi {
-        constructor(pluginName: string);
-        
-        [x: string]: any;
         /**
          * An instance of {@link ContextMenuModule.ContextMenu} for interacting with context menus.
          */
         readonly ContextMenu: ContextMenuModule.ContextMenu;
-        
+
+        [x: string]: any;
         readonly React: typeof ReactInstance;
-        
         readonly ReactDOM: typeof ReactDOMInstance;
-        
         /**
          * An instance of {@link DOMModule.DOM} to interact with the DOM.
          */
         readonly DOM: DOMModule.DOM;
-
         /**
          * An instance of {@link DataModule.Data} to manage data.
          */
         readonly Data: DataModule.Data;
-
         /**
          * An instance of {@link PatcherModule.Patcher} to monkey patch functions.
          */
         readonly Patcher: PatcherModule.Patcher;
-
         /**
          * An instance of {@link AddonAPIModule.AddonAPI} to access plugins.
          */
         readonly Plugins: AddonAPIModule.AddonAPI;
-
         /**
          * An instance of {@link ReactUtilsModule.ReactUtils} to work with React.
          */
         readonly ReactUtils: ReactUtilsModule.ReactUtils;
-
         /**
          * An instance of {@link AddonAPIModule.AddonAPI} to access themes.
          */
         readonly Themes: AddonAPIModule.AddonAPI;
-
         /**
          * An instance of {@link UIModule.UI} to create interfaces.
          */
         readonly UI: UIModule.UI;
-
         /**
          * An instance of {@link UtilsModule.Utils} for general utility functions.
          */
         readonly Utils: UtilsModule.Utils;
-
         /**
          * An instance of {@link WebpackModule.Webpack} to search for modules.
          */
         readonly Webpack: WebpackModule.Webpack;
+
+        constructor(pluginName: string);
 
         /**
          * Creates an shows an alert modal to the user.
@@ -1291,7 +1281,7 @@ declare namespace WebpackModule {
          * Whether to execute the filter on webpack exports. Defaults to false.
          */
         searchExports?: boolean;
-        
+
         fatal?: boolean;
     }
 
@@ -1384,10 +1374,9 @@ declare namespace WebpackModule {
      */
     class Webpack {
         modules: any;
-        
-        getByKeys(...keys: (string | WebpackModuleSearchOptions)[]): any | undefined;
-        
         readonly Filters: Filters;
+
+        getByKeys(...keys: (string | WebpackModuleSearchOptions)[]): any | undefined;
 
         /**
          * Finds multiple modules using multiple filters.
@@ -1406,8 +1395,9 @@ declare namespace WebpackModule {
         getModule(filter: WebpackFilter | Function, options?: WebpackModuleSearchOptions): object | null;
 
         waitForModule(filter: WebpackFilter, options?: WebpackAsyncModuleSearchOptions): Promise<object | null>;
-        
+
         getByStrings(...filter: (string | WebpackAsyncModuleSearchOptions)[]): any | null;
+
         getAllByStrings(...query: string[]): any | null;
     }
 }

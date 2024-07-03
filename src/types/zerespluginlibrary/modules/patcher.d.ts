@@ -8,22 +8,26 @@
  */
 export default class Patcher {
     static get patches(): never[];
+
     /**
      * Returns all the patches done by a specific caller
      * @param {string} name - Name of the patch caller
      * @method
      */
     static getPatchesByCaller(name: string): any;
+
     /**
      * Unpatches all patches passed, or when a string is passed unpatches all
      * patches done by that specific caller.
      * @param {Array|string} patches - Either an array of patches to unpatch or a caller name
      */
     static unpatchAll(patches: any[] | string): void;
+
     /**
      * Function with no arguments and no return value that may be called to revert changes made by {@link module:Patcher}, restoring (unpatching) original method.
      * @callback module:Patcher~unpatch
      */
+
     /**
      * A callback that modifies method logic. This callback is called on each call of the original method and is provided all data about original call. Any of the data can be modified if necessary, but do so wisely.
      *
@@ -46,6 +50,7 @@ export default class Patcher {
      * @return {module:Patcher~unpatch} Function with no arguments and no return value that should be called to cancel (unpatch) this patch. You should save and run it when your plugin is stopped.
      */
     static before(caller: string, moduleToPatch: object, functionName: string, callback: any): any;
+
     /**
      * This method patches onto another function, allowing your code to run after.
      * Using this, you are also able to modify the return value, using the return of your code instead.
@@ -57,6 +62,7 @@ export default class Patcher {
      * @return {module:Patcher~unpatch} Function with no arguments and no return value that should be called to cancel (unpatch) this patch. You should save and run it when your plugin is stopped.
      */
     static after(caller: string, moduleToPatch: object, functionName: string, callback: any): any;
+
     /**
      * This method patches onto another function, allowing your code to run instead.
      * Using this, you are also able to modify the return value, using the return of your code instead.

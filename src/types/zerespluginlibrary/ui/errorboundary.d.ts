@@ -1,13 +1,17 @@
 export function WrapBoundary(Original: any): {
-    new (): {
+    new(): {
         render(): any;
     };
 };
+
 export default class ErrorBoundary {
-    constructor(props: any);
     state: {
         hasError: boolean;
     };
+
+    constructor(props: any);
+
     componentDidCatch(): void;
+
     render(): any;
 }

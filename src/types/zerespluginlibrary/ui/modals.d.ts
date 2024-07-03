@@ -1,11 +1,13 @@
 export default class Modals {
     /** Sizes of modals. */
     static get ModalSizes(): {};
+
     /**
      * Shows the user profile modal for a given user.
      * @param {string} userId - id of the user to show profile for
      */
     static showUserProfile(userId: string): any;
+
     /**
      * Acts as a wrapper for {@link module:Modals.showModal} where the `children` is a text element.
      * @param {string} title - title of the modal
@@ -14,12 +16,14 @@ export default class Modals {
      * @see module:Modals.showModal
      */
     static showConfirmationModal(title: string, content: string, options?: object | undefined): void;
+
     /**
      * Shows a very simple alert modal that has title, content and an okay button.
      * @param {string} title - title of the modal
      * @param {string} body - text to show inside the modal
      */
     static showAlertModal(title: string, body: string): void;
+
     /**
      * Shows a generic but very customizable modal.
      * @param {string} title - title of the modal
@@ -38,6 +42,7 @@ export default class Modals {
         onConfirm?: any;
         onCancel?: any;
     } | undefined): any;
+
     /**
      * @interface
      * @name module:Modals~Changelog

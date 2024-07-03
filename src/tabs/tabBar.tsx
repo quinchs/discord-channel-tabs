@@ -11,20 +11,11 @@ import {
     Tab as TabInfo
 } from "./tabsManager";
 import {Tab} from "./tab";
-import React, {createElement, useEffect, useLayoutEffect, useRef, useState} from "react";
-import {
-    getOrCreatePrivateChannelForUser,
-    Navigator,
-    PlusIconMedium,
-    PlusIconSmall,
-    resolveChannelIdFromGuildId,
-    ScrollerThin,
-    selectChannel
-} from "../discord";
-import {DragDropContext, Droppable, Draggable, DropResult, SensorAPI} from "react-beautiful-dnd";
+import React, {useEffect, useRef, useState} from "react";
+import {getOrCreatePrivateChannelForUser, resolveChannelIdFromGuildId, selectChannel} from "../discord";
+import {DragDropContext, Draggable, Droppable, DropResult} from "react-beautiful-dnd";
 import Plugin from "../index";
 import {AddTabButton} from "./addTabButton";
-import WhatTheFuck from "../discord/contextMenus/whatTheFuck";
 
 type Props = {};
 
@@ -103,7 +94,7 @@ export const TabBar = (props: Props) => {
         if (!plugin) return;
 
         const onClose = plugin.onTabClose(onTabClose)
-        
+
         const onAdd = plugin.onTabAdd(tab => {
             setCurrentTab(tab);
 
@@ -135,7 +126,7 @@ export const TabBar = (props: Props) => {
     useEffect(() => {
         const savedTabs = getOpenTabs();
         setTabs(savedTabs);
-        
+
         setCurrentTab(savedTabs.find(x => isUriAtTab(window.location.pathname, x)));
     }, []);
 
@@ -149,14 +140,14 @@ export const TabBar = (props: Props) => {
                 saveTabsState(newTabs)
             }
         }
-        
+
         switch (type) {
             case "GUILD":
                 const channelId = resolveChannelIdFromGuildId(record.id);
                 const channelName = ZLibrary.DiscordModules.ChannelStore.getChannel(channelId).name;
                 pushTab({
                     channelId,
-                    guildId: record.id, 
+                    guildId: record.id,
                     name: channelName
                 })
                 break;
@@ -168,18 +159,18 @@ export const TabBar = (props: Props) => {
                 break;
             case "USER":
                 const dmChannelId = await getOrCreatePrivateChannelForUser(record.id);
-                
+
                 pushTab({
-                    channelId: dmChannelId, 
+                    channelId: dmChannelId,
                     name: record.globalName,
                     userId: record.id
                 });
                 break;
-                default:
-                    break;
+            default:
+                break;
         }
     }
-    
+
     const onTabClose = (tab: TabInfo) => {
         const tabIndex = tabs.indexOf(tab);
 
@@ -189,7 +180,7 @@ export const TabBar = (props: Props) => {
             ...tabs.slice(0, tabIndex),
             ...tabs.slice(tabIndex + 1)
         ];
-        
+
         setTabs(newTabs);
         saveTabsState(newTabs);
     }
@@ -218,7 +209,7 @@ export const TabBar = (props: Props) => {
         const match = getChannelFromUri(uri);
 
         if (!match) return;
-        
+
         const channel = ZLibrary.DiscordModules.ChannelStore.getChannel(match.channelId);
 
         if (!channel) return;
@@ -232,10 +223,10 @@ export const TabBar = (props: Props) => {
         }
 
         const tab = createTabFromChannel(channel);
-        
+
         if (!tab) return;
 
-        if(tabs.length === 0 ){
+        if (tabs.length === 0) {
             setTabs([tab]);
             saveTabsState([tab]);
         }
@@ -275,7 +266,7 @@ export const TabBar = (props: Props) => {
         setTabs(newTabs);
         saveTabsState(newTabs);
     }
-    
+
     return (
         <DragDropContext
             onBeforeDragStart={e => {
@@ -326,7 +317,7 @@ export const TabBar = (props: Props) => {
                                         {(providedDraggable, snapshot) => {
                                             // Restrict dragging to horizontal axis
                                             let transform = providedDraggable.draggableProps.style?.transform;
-                                            
+
                                             if (snapshot.isDragging && dragTargetBounds.current && tabBarBounds && transform) {
                                                 transform = transform.replace(/\(([-+]*\d+)px, [-+]*\d+px/, match => {
                                                     const offset = Number.parseInt(match.slice(1))
@@ -336,7 +327,7 @@ export const TabBar = (props: Props) => {
                                                     const bounds = Math.min(tabBarBounds.right - dragTargetBounds.current!.width, Math.max(tabBarBounds.left, x)) - dragTargetBounds.current!.left;
                                                     return `(${bounds}px, 0px`;
                                                 });
-                                                
+
                                                 // @ts-ignore
                                                 providedDraggable.draggableProps.style = {
                                                     ...providedDraggable.draggableProps.style,

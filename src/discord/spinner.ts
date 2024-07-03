@@ -6,7 +6,7 @@ export default BdApi.Webpack.getModule((m) => m.Type?.SPINNING_CIRCLE, {
 }) as FunctionComponent<{
     type: "wanderingCubes" | "chasingDots" | "pulsingEllipsis" | "spinningCircle" | "spinningCircleSimple" | "lowMotion",
     animated: boolean,
-    className?: string, 
-    itemClassName?: string, 
+    className?: string,
+    itemClassName?: string,
 } & HTMLAttributes<HTMLDivElement>>;
 

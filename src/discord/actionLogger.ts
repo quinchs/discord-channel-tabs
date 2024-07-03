@@ -9,7 +9,7 @@ export const unsubscribeFromDiscordAction = (event: string, handler: Function) =
 }
 
 export const hookDiscordAction = (event: string, handler: Function): () => void => {
-    subscribeToDiscordAction(event,  handler);
+    subscribeToDiscordAction(event, handler);
     return () => unsubscribeFromDiscordAction(event, handler);
 }
 

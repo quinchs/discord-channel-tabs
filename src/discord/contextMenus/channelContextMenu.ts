@@ -9,16 +9,16 @@ let cachedRequiredModules: {
 
 const loadRequiredModules = () => {
     if (cachedRequiredModules) return cachedRequiredModules;
-    
+
     // get the module for channels, we're going to extract the module ids for the context menu from it
     const module = byModuleStrings("handleContextMenu", "GROUP_DM", "DM", "getGuild", "channel", "guild");
-    
+
     if (!module) return;
-    
+
     const matches = BdApi.Webpack.modules[module].toString().match(/Promise\.all\((.*?)\)\.then\((.*?)\);/gm);
 
-    if (!matches || matches.length !== 3)  return;
-    
+    if (!matches || matches.length !== 3) return;
+
     cachedRequiredModules = {
         // @ts-ignore
         GROUP_DM: new Function(`const n = arguments[0]; return ${matches[0]}`),
@@ -27,7 +27,7 @@ const loadRequiredModules = () => {
         // @ts-ignore
         GUILD_CHANNEL: new Function(`const n = arguments[0]; return ${matches[2]}`),
     };
-    
+
     return cachedRequiredModules;
 }
 
@@ -35,7 +35,7 @@ export const groupDMContextMenuItems = async () => {
     const discordsRequire = getDiscordsInternalRequire();
     const modules = loadRequiredModules();
     if (!modules) return;
-    
+
     return (await modules.GROUP_DM(discordsRequire))?.default;
 }
 

@@ -9,6 +9,7 @@ export type module = () => any;
  * @returns {string} the text to show in the marker
  * @callback module:Settings~SliderMarkerValue
  */
+
 /**
  * Used to render the grabber tooltip.
  * @param {Number} value - The value to render

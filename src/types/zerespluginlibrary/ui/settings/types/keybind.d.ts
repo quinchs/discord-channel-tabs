@@ -1,4 +1,5 @@
 export default Keybind;
+
 /**
  * Creates a keybind setting using discord's built in keybind recorder.
  * @memberof module:Settings=

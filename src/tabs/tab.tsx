@@ -2,13 +2,7 @@
 import {css, jsx} from '@emotion/react'
 import styled from '@emotion/styled'
 import {CloseIcon} from "../icons/closeIcon";
-import {
-    createElement,
-    HTMLAttributes,
-    LegacyRef, MouseEvent, useEffect,
-    useRef,
-    useState
-} from "react";
+import {HTMLAttributes, LegacyRef, MouseEvent, useEffect, useRef, useState} from "react";
 import {getTabType, Tab as TabData} from "./tabsManager";
 import TabHeader from "./tabHeader";
 import {ContextMenuRenderer, openContextMenu} from "../discord/contextMenus/contextMenuDispatcher";
@@ -208,7 +202,7 @@ export const Tab = ({tab, ...props}: Props) => {
                 menu = {
                     renderer: DMContextMenuItems,
                     props: {
-                        user, 
+                        user,
                         channel,
                         showModalItems: false
                     }

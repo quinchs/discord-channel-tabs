@@ -4,11 +4,17 @@
  */
 export default class ReactComponents {
     static get components(): Map<any, any>;
+
     static get unknownComponents(): Set<any>;
+
     static get listeners(): Map<any, any>;
+
     static get nameSetters(): Set<any>;
+
     static get ReactComponent(): typeof ReactComponent;
+
     static push(component: any, selector: any, filter: any): any;
+
     /**
      * Finds a component from the components array or by waiting for it to be mounted.
      * @param {String} name The component's name
@@ -16,6 +22,7 @@ export default class ReactComponents {
      * @return {Promise<ReactComponent>}
      */
     static getComponentByName(name: string, selector: Object): Promise<ReactComponent>;
+
     /**
      * Finds a component from the components array or by waiting for it to be mounted.
      * @param {String} name The component's name
@@ -24,16 +31,23 @@ export default class ReactComponents {
      * @return {Promise<ReactComponent>}
      */
     static getComponent(name: string, selector: Object, filter?: Function): Promise<ReactComponent>;
+
     static setName(name: any, filter: any): any;
+
     static processUnknown(component: any): any;
+
     static recursiveComponents(internalInstance?: any): any;
 }
+
 declare class ReactComponent {
-    constructor(id: any, component: any, selector: any, filter: any);
     id: any;
     component: any;
     selector: any;
     filter: any;
+
+    constructor(id: any, component: any, selector: any, filter: any);
+
     forceUpdateAll(): void;
 }
+
 export {};

@@ -5,12 +5,14 @@ export default class Utilities {
      * @param {function} comparator - comparator to sort by
      */
     static stableSort(list: any[], comparator: Function): void;
+
     /**
      * Generates an automatically memoizing version of an object.
      * @param {Object} object - object to memoize
      * @returns {Proxy} the proxy to the object that memoizes properties
      */
     static memoizeObject(object: Object): ProxyConstructor;
+
     /**
      * Wraps the method in a `try..catch` block.
      * @param {callable} method - method to wrap
@@ -18,11 +20,13 @@ export default class Utilities {
      * @returns {callable} wrapped version of method
      */
     static suppressErrors(method: callable, description: string): callable;
+
     /**
      * This only exists because Samo relied on lodash being there... fuck lodash.
      * @param {*} anything - whatever you want
      */
     static isNil(anything: any): boolean;
+
     /**
      * Format template strings with placeholders (`${placeholder}`) into full strings.
      * Quick example: `Utilities.formatString("Hello, ${user}", {user: "Zerebos"})`
@@ -32,6 +36,7 @@ export default class Utilities {
      * @returns {string} the properly formatted string
      */
     static formatTString(string: string, values: object): string;
+
     /**
      * Format strings with placeholders (`{{placeholder}}`) into full strings.
      * Quick example: `Utilities.formatString("Hello, {{user}}", {user: "Zerebos"})`
@@ -41,12 +46,14 @@ export default class Utilities {
      * @returns {string} the properly formatted string
      */
     static formatString(string: string, values: object): string;
+
     /**
      * Finds a value, subobject, or array from a tree that matches a specific filter. Great for patching render functions.
      * @param {object} tree React tree to look through. Can be a rendered object or an internal instance.
      * @param {callable} searchFilter Filter function to check subobjects against.
      */
     static findInReactTree(tree: object, searchFilter: callable): any;
+
     /**
      * Finds a value, subobject, or array from a tree that matches a specific filter.
      * @param {object} tree Tree that should be walked
@@ -55,10 +62,11 @@ export default class Utilities {
      * @param {Array<string>|null} [options.walkable=null] Array of strings to use as keys that are allowed to be walked on. Null value indicates all keys are walkable
      * @param {Array<string>} [options.ignore=[]] Array of strings to use as keys to exclude from the search, most helpful when `walkable = null`.
      */
-    static findInTree(tree: object, searchFilter: callable, { walkable, ignore }?: {
+    static findInTree(tree: object, searchFilter: callable, {walkable, ignore}?: {
         walkable?: string[] | null | undefined;
         ignore?: string[] | undefined;
     }): any;
+
     /**
      * Gets a nested property (if it exists) safely. Path should be something like `prop.prop2.prop3`.
      * Numbers can be used for arrays as well like `prop.prop2.array.0.id`.
@@ -66,6 +74,7 @@ export default class Utilities {
      * @param {string} path - representation of the property to obtain
      */
     static getNestedProp(obj: Object, path: string): Object;
+
     /**
      * Builds a classname string from any number of arguments. This includes arrays and objects.
      * When given an array all values from the array are added to the list.
@@ -74,6 +83,7 @@ export default class Utilities {
      * @param {...Any} argument - anything that should be used to add classnames.
      */
     static className(...args: Any[]): string;
+
     /**
      * Safely adds to the prototype of an existing object by checking if the
      * property exists on the prototype.
@@ -82,6 +92,7 @@ export default class Utilities {
      * @param {callable} func - Function to run
      */
     static addToPrototype(object: object, prop: string, func: callable): any;
+
     /**
      * Deep extends an object with a set of other objects. Objects later in the list
      * of `extenders` have priority, that is to say if one sets a key to be a primitive,
@@ -92,18 +103,21 @@ export default class Utilities {
      * @returns {object} - A reference to `extendee`
      */
     static extend(extendee: object, ...extenders: object[]): object;
+
     /**
      * Clones an object and all it's properties.
      * @param {Any} value The value to clone
      * @return {Any} The cloned value
      */
     static deepclone(value: Any): Any;
+
     /**
      * Freezes an object and all it's properties.
      * @param {Any} object The object to freeze
      * @param {Function} exclude A function to filter object that shouldn't be frozen
      */
     static deepfreeze(object: Any, exclude: Function): any;
+
     /**
      * Removes an item from an array. This differs from Array.prototype.filter as it mutates the original array instead of creating a new one.
      * @param {Array} array The array to filter
@@ -111,6 +125,7 @@ export default class Utilities {
      * @return {Array}
      */
     static removeFromArray(array: any[], item: Any, filter: any): any[];
+
     /**
      * Returns a function, that, as long as it continues to be invoked, will not
      * be triggered. The function will be called after it stops being called for
@@ -122,32 +137,36 @@ export default class Utilities {
      * @param {number} delay
      */
     static debounce(executor: Function, delay: number): (...args: any[]) => void;
+
     /**
      * Loads data through BetterDiscord's API.
      * @param {string} name - name for the file (usually plugin name)
      * @param {string} key - which key the data is saved under
      * @param {object} defaultData - default data to populate the object with
      * @returns {object} the combined saved and default data
-    */
+     */
     static loadData(name: string, key: string, defaultData?: object): object;
+
     /**
      * Saves data through BetterDiscord's API.
      * @param {string} name - name for the file (usually plugin name)
      * @param {string} key - which key the data should be saved under
      * @param {object} data - data to save
-    */
+     */
     static saveData(name: string, key: string, data: object): void;
+
     /**
      * Loads settings through BetterDiscord's API.
      * @param {string} name - name for the file (usually plugin name)
      * @param {object} defaultData - default data to populate the object with
      * @returns {object} the combined saved and default settings
-    */
+     */
     static loadSettings(name: string, defaultSettings: any): object;
+
     /**
      * Saves settings through BetterDiscord's API.
      * @param {string} name - name for the file (usually plugin name)
      * @param {object} data - settings to save
-    */
+     */
     static saveSettings(name: string, data: object): void;
 }

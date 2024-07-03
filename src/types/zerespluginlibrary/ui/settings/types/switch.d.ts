@@ -1,4 +1,5 @@
 export default Switch;
+
 /**
  * Creates a switch using discord's built in switch.
  * @memberof module:Settings

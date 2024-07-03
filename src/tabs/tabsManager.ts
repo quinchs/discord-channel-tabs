@@ -1,7 +1,4 @@
-﻿import {Location} from "react-router-dom";
-import tabHeader from "./tabHeader";
-
-export interface Tab {
+﻿export interface Tab {
     channelId: string;
     guildId?: string;
     userId?: string;
@@ -16,7 +13,7 @@ export const createTabFromChannel = (channel: any): Tab | undefined => {
                 .map((x: string) => ZLibrary.DiscordModules.UserStore.getUser(x).globalName)
                 .join(", ");
         }
-        
+
         return {
             channelId: channel.id,
             name: name ?? "Unknown Group"
@@ -43,11 +40,11 @@ export const getTabType = (tab: Tab): "GUILD_CHANNEL" | "GROUP_DM" | "DM" => {
     return "GROUP_DM";
 }
 
-export const getChannelFromUri = (uri: string): {channelId: string, parent?: string} | undefined => {
+export const getChannelFromUri = (uri: string): { channelId: string, parent?: string } | undefined => {
     const matches = uri.match(/\/channels\/(\d+|@me|@favorites)\/(\d+)/);
-    
+
     if (!matches || matches.length !== 3) return;
-    
+
     return {
         parent: matches[1],
         channelId: matches[2],
@@ -56,9 +53,9 @@ export const getChannelFromUri = (uri: string): {channelId: string, parent?: str
 
 export const isUriAtTab = (uri: string, tab: Tab) => {
     const path = getChannelFromUri(uri);
-    
+
     if (!path) return false;
-    
+
     return path.channelId === tab.channelId;
 }
 

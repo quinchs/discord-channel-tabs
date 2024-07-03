@@ -1,4 +1,4 @@
-﻿import {Component, ComponentClass, PropsWithChildren} from "react";
+﻿import {ComponentClass, PropsWithChildren} from "react";
 
 const popout = BdApi.Webpack.getByKeys("Popout").Popout;
 
