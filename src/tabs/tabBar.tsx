@@ -17,6 +17,7 @@ import {
 import {DragDropContext, Droppable, Draggable, DropResult, SensorAPI} from "react-beautiful-dnd";
 import Plugin from "../index";
 import {AddTabButton} from "./addTabButton";
+import WhatTheFuck from "../discord/contextMenus/whatTheFuck";
 
 type Props = {};
 
@@ -287,7 +288,7 @@ export const TabBar = (props: Props) => {
         setTabs(newTabs);
         saveTabsState(newTabs);
     }
-
+    
     return (
         <DragDropContext
             onBeforeDragStart={e => {

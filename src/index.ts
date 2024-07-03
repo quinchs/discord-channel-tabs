@@ -1,13 +1,14 @@
 import {patchChannelMenu, patchChatArea} from "./injector";
 import {Tab} from "./tabs/tabsManager";
 import {subscribeToDiscordAction, unsubscribeFromDiscordAction} from "./discord/actionLogger";
+import {getDiscordsInternalRequire} from "./discord/require";
 
 export default class Plugin extends EventTarget {
     patchesAppliedSuccessfully = false;
     
     patches: ((plugin: Plugin) => any | undefined)[] = [
         patchChatArea,
-        //patchChannelMenu,
+        patchChannelMenu,
     ];
     cleanUpFunctions: (() => void)[] = [];
 

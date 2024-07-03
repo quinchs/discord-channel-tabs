@@ -1383,6 +1383,8 @@ declare namespace WebpackModule {
      * @see https://github.com/BetterDiscord/BetterDiscord/blob/main/renderer/src/modules/api/webpack.js
      */
     class Webpack {
+        modules: any;
+        
         getByKeys(...keys: (string | WebpackModuleSearchOptions)[]): any | undefined;
         
         readonly Filters: Filters;

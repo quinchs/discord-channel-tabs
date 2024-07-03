@@ -3,13 +3,20 @@ import {css, jsx} from '@emotion/react'
 import styled from '@emotion/styled'
 import {CloseIcon} from "../icons/closeIcon";
 import {
+    createElement,
     HTMLAttributes,
     LegacyRef, MouseEvent, useEffect,
     useRef,
     useState
 } from "react";
-import {Tab as TabData} from "./tabsManager";
+import {getTabType, Tab as TabData} from "./tabsManager";
 import TabHeader from "./tabHeader";
+import {ContextMenuRenderer, openContextMenu} from "../discord/contextMenus/contextMenuDispatcher";
+import {
+    DMContextMenuItems,
+    groupDMContextMenuItems,
+    guildChannelContextMenuItems
+} from "../discord/contextMenus/channelContextMenu";
 
 type Props = HTMLAttributes<HTMLDivElement> & {
     selected: boolean;
@@ -41,10 +48,11 @@ const selectedCSS = css`
     background-color: var(--background-tertiary);
 
     transition: box-shadow 0.2s ease;
-    
+
     &:hover:before {
         box-shadow: 4px 4px 0 0 color-mix(in lch, var(--background-secondary) 40%, var(--background-tertiary));
     }
+
     &:before {
         content: "";
         position: absolute;
@@ -56,9 +64,11 @@ const selectedCSS = css`
         background-color: transparent;
         box-shadow: 4px 4px 0 0 var(--background-tertiary);
     }
+
     &:hover:after {
         box-shadow: -4px 4px 0 0 color-mix(in lch, var(--background-secondary) 40%, var(--background-tertiary));
     }
+
     &:after {
         content: "";
         position: absolute;
@@ -84,7 +94,7 @@ const closeIconStyles = css`
     border-radius: 10px;
     cursor: pointer;
     transition: background-color 0.1s ease-in-out;
-    
+
     &:hover {
         background-color: color-mix(in lch, var(--text-muted) 15%, var(--background-tertiary));
     }
@@ -100,12 +110,12 @@ const TabContentContainer = styled.section`
 
 export const Tab = ({tab, ...props}: Props) => {
     const tabContainerRef = useRef<HTMLSpanElement>(null);
-    
+
     const [tabWidth, setTabWidth] = useState<number>();
-    
+
     const [tabGrow, setTabGrow] = useState<boolean>(props.selected);
     const [closeVisible, setCloseVisible] = useState(props.selected);
-    
+
     const openTimeoutId = useRef<NodeJS.Timeout>();
     const closeTimeoutId = useRef<NodeJS.Timeout>();
 
@@ -121,10 +131,10 @@ export const Tab = ({tab, ...props}: Props) => {
             setTabGrow(true);
         } else if (!props.selected) {
             setTabGrow(false);
-            closeTimeoutId.current = setTimeout(() => setCloseVisible(false), 100); 
+            closeTimeoutId.current = setTimeout(() => setCloseVisible(false), 100);
         }
     }, [props.selected]);
-    
+
     const onMouseEnter = (e: MouseEvent<HTMLDivElement>) => {
         if (props.onMouseEnter)
             props.onMouseEnter(e);
@@ -146,7 +156,7 @@ export const Tab = ({tab, ...props}: Props) => {
             setTabGrow(true);
         }, 400);
     }
-    
+
     const onMouseLeave = (e: MouseEvent<HTMLDivElement>) => {
         if (props.onMouseLeave)
             props.onMouseLeave(e)
@@ -168,17 +178,73 @@ export const Tab = ({tab, ...props}: Props) => {
         // wait 0.1s for the animation before removing the close icon.
         closeTimeoutId.current = setTimeout(() => setCloseVisible(false), 100);
     }
-    
+
+    const contextMenu = (e: MouseEvent<HTMLDivElement>) => {
+        const type = getTabType(tab);
+
+        let menu: {
+            renderer: ContextMenuRenderer,
+            props: any
+        } | undefined;
+
+        const channel = ZLibrary.DiscordModules.ChannelStore.getChannel(tab.channelId);
+        if (!channel) return;
+
+        switch (type) {
+            case "GROUP_DM":
+                menu = {
+                    renderer: groupDMContextMenuItems,
+                    props: {
+                        channel,
+                        selected: true
+                    }
+                }
+                break;
+            case "DM":
+                const user = ZLibrary.DiscordModules.UserStore.getUser(tab.userId);
+
+                if (!user) return;
+
+                menu = {
+                    renderer: DMContextMenuItems,
+                    props: {
+                        user, 
+                        channel,
+                        showModalItems: false
+                    }
+                };
+                break;
+            case "GUILD_CHANNEL":
+                const guild = ZLibrary.DiscordModules.GuildStore.getGuild(tab.guildId);
+
+                if (!guild) return;
+
+                menu = {
+                    renderer: guildChannelContextMenuItems,
+                    props: {
+                        channel,
+                        guild
+                    }
+                };
+                break;
+        }
+
+        if (!menu) return;
+
+        openContextMenu(e, menu.renderer, menu.props);
+    }
+
     return (
         <TabElement
             {...props}
+            onContextMenu={contextMenu}
             ref={props.innerRef}
-            onMouseEnter={onMouseEnter} 
+            onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
             css={css`
                 cursor: ${props.isDragging ? "grab" : "pointer"} !important;
                 transition: width 0.1s ease-in-out, background-color 0.2s;
-                
+
                 ${props.selected && !props.isDragging && selectedCSS};
                 ${growStyles(tabWidth, props.selected || tabGrow)};
                 ${props.isDragging && css`
@@ -186,24 +252,18 @@ export const Tab = ({tab, ...props}: Props) => {
                 `}
             `}
         >
-            {/*{tab.guildId && (*/}
-            {/*    <GuildChannelContextMenu */}
-            {/*        channel={ZLibrary.DiscordModules.ChannelStore.getChannel(tab.channelId)}*/}
-            {/*        guild={ZLibrary.DiscordModules.GuildStore.getGuild(tab.guildId)}*/}
-            {/*    />*/}
-            {/*)}*/}
             <TabContentContainer>
-                <TabHeader 
-                    selected={props.selected} 
-                    tab={tab} 
-                    innerRef={tabContainerRef} 
+                <TabHeader
+                    selected={props.selected}
+                    tab={tab}
+                    innerRef={tabContainerRef}
                     onTabUpdated={() => {
                         if (!tabContainerRef.current) return;
-                        
+
                         if (tabContainerRef.current?.clientWidth !== tabWidth) {
                             setTabWidth(tabContainerRef.current.clientWidth);
                         }
-                            
+
                     }}
                 />
                 {closeVisible && <CloseIcon css={closeIconStyles} onClick={props.onClose}/>}

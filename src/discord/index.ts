@@ -1,4 +1,4 @@
-﻿import {byModuleFuncString} from "../utils/moduleSearchFilters";
+﻿import {byFuncString} from "../utils/moduleSearchFilters";
 
 const privateChannelsActor = BdApi.Webpack.getByKeys("getOrEnsurePrivateChannel", { fatal: true})! as any;
 const channelsActor = BdApi.Webpack.getModule(BdApi.Webpack.Filters.byProps("selectChannel"))! as any;
@@ -6,7 +6,7 @@ const guildsActor = BdApi.Webpack.getModule(BdApi.Webpack.Filters.byProps("trans
 const icons = BdApi.Webpack.getModule(BdApi.Webpack.Filters.byProps("PlusMediumIcon")) as any;
 
 const guildChannelResolver = Object.values(BdApi.Webpack.getModule(
-    byModuleFuncString("shouldShowOnboarding", "getDefaultChannel"),
+    byFuncString("shouldShowOnboarding", "getDefaultChannel"),
     { fatal: true }
 ) as any)[0]! as (e: string) => string;
 

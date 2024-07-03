@@ -9,4 +9,5 @@ export default popout as ComponentClass<PropsWithChildren<{
     onRequestOpen?: Function
     align: "left" | "top" | "center",
     autoInvert?: boolean,
+    renderPopout: Function
 }>>

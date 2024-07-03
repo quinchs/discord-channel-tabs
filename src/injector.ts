@@ -2,6 +2,8 @@
 import {TabArea} from "./tabs/tabArea";
 import Plugin from "./index";
 import {Tab} from "./tabs/tabsManager";
+import {byModuleStrings} from "./utils/moduleSearchFilters";
+import {buildTabsContextMenuItems} from "./tabs/contextMenu";
 
 export const patchChatArea = (plugin: Plugin) => {
     const chatAreaDOMNode = document.querySelector(".chat_a7d72e");
@@ -19,27 +21,10 @@ export const patchChatArea = (plugin: Plugin) => {
 
 export const patchChannelMenu = (plugin: Plugin) => {
     return BdApi.ContextMenu.patch("channel-context", (returnValue: any, props: any) => {
-        returnValue.props.children.push(
-            BdApi.ContextMenu.buildMenuChildren([{
-                type: "group",
-                items: [{
-                    type: "text",
-                    label: "Open in new tab",
-                    //@ts-ignore
-                    onClick: newValue => {
-                        if (!props.channel) return;
-                        
-                        const tab: Tab = {
-                            name: props.channel.name, 
-                            channelId: props.channel.id,
-                            guildId: props.channel.guild_id,
-                        };
-                        
-                        console.log(plugin,  tab);
-                        plugin.dispatchTabAdd(tab);
-                    }
-                }]
-            }])
-        )
+        const menuElements = buildTabsContextMenuItems(plugin, returnValue, props);
+        
+        if (!menuElements) return;
+        
+        returnValue.props.children.push(menuElements);
     });
 }
