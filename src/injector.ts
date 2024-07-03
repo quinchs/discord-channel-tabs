@@ -3,7 +3,7 @@ import {TabArea} from "./tabs/tabArea";
 import Plugin from "./index";
 import {Tab} from "./tabs/tabsManager";
 import {byModuleStrings} from "./utils/moduleSearchFilters";
-import {buildTabsContextMenuItems} from "./tabs/contextMenu";
+import {buildCloseTabsMenuItems, buildTabsContextMenuItems} from "./tabs/contextMenu";
 
 export const patchChatArea = (plugin: Plugin) => {
     const chatAreaDOMNode = document.querySelector(".chat_a7d72e");
@@ -20,11 +20,27 @@ export const patchChatArea = (plugin: Plugin) => {
 }
 
 export const patchChannelMenu = (plugin: Plugin) => {
-    return BdApi.ContextMenu.patch("channel-context", (returnValue: any, props: any) => {
-        const menuElements = buildTabsContextMenuItems(plugin, returnValue, props);
-        
+    const callback = (returnValue: any, props: any) => {
+        let menuElements;
+
+        if (props.tab) {
+            menuElements = buildCloseTabsMenuItems(() => {
+                plugin.dispatchTabClose(props.tab)
+            })
+        } else {
+            menuElements = buildTabsContextMenuItems(plugin, returnValue, props);
+        }
+
         if (!menuElements) return;
-        
+
         returnValue.props.children.push(menuElements);
-    });
+    };
+    
+    const channelContext = BdApi.ContextMenu.patch("channel-context", callback);
+    const userContext = BdApi.ContextMenu.patch("user-context", callback);
+    
+    return () => {
+        channelContext();
+        userContext();
+    }
 }

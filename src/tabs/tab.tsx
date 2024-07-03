@@ -231,7 +231,10 @@ export const Tab = ({tab, ...props}: Props) => {
 
         if (!menu) return;
 
-        openContextMenu(e, menu.renderer, menu.props);
+        openContextMenu(e, menu.renderer, {
+            ...menu.props,
+            tab
+        });
     }
 
     return (

@@ -14,17 +14,29 @@ export default class Plugin extends EventTarget {
 
     dispatchTabAdd(tab: Tab) {
         this.dispatchEvent(new CustomEvent('tab-add', {
-            detail: {
-                tab: tab
-            }
+            detail: tab
         }))
     }
 
+    dispatchTabClose(tab: Tab) {
+        this.dispatchEvent(new CustomEvent('tab-close', {
+            detail: tab
+        }));
+    }
+    
     onTabAdd(handler: (tab: Tab) => void): () => void {
         // @ts-ignore
-        const listener = evt => handler(evt.detail.tab);
+        const listener = evt => handler(evt.detail);
         this.addEventListener('tab-add', listener)
         return () => this.removeEventListener('tab-add', listener);
+    }
+    
+    onTabClose(handler: (tab: Tab) => void): () => void {
+        // @ts-ignore
+        const listener = evt => handler(evt.detail);
+        
+        this.addEventListener('tab-close', listener);
+        return () => this.removeEventListener('tab-close', listener);
     }
     
     onLocationSwitch(handler: () => void): () => void {
@@ -33,20 +45,12 @@ export default class Plugin extends EventTarget {
     }
     
     start() {
-        subscribeToDiscordAction("CONTEXT_MENU_OPEN", this.onContextMenu)
-        
         this.patchesAppliedSuccessfully = this.applyPatches(...this.patches);
     }
 
     stop() {
-        unsubscribeFromDiscordAction("CONTEXT_MENU_OPEN", this.onContextMenu);
-        
         this.cleanUpFunctions.forEach(x => x());
         BdApi.Patcher.unpatchAll('quinchs-tabs');
-    }
-    
-    onContextMenu(e: any) {
-        console.log("CONTEXT_MENU_OPEN", e);
     }
 
     onSwitch() {

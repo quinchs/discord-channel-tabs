@@ -8,6 +8,35 @@ export interface Tab {
     name: string;
 }
 
+export const createTabFromChannel = (channel: any): Tab | undefined => {
+    if (channel.isGroupDM()) {
+        let name = channel.name;
+        if (!name && channel.recipients) {
+            name = channel.recipients
+                .map((x: string) => ZLibrary.DiscordModules.UserStore.getUser(x).globalName)
+                .join(", ");
+        }
+        
+        return {
+            channelId: channel.id,
+            name: name ?? "Unknown Group"
+        }
+    } else if (channel.isDM()) {
+        const user = ZLibrary.DiscordModules.UserStore.getUser(channel.getRecipientId());
+        return {
+            channelId: channel.id,
+            name: user.globalName ?? user.username,
+            userId: user.id
+        }
+    } else if (channel.guild_id) {
+        return {
+            name: channel.name,
+            guildId: channel.guild_id,
+            channelId: channel.id
+        }
+    }
+}
+
 export const getTabType = (tab: Tab): "GUILD_CHANNEL" | "GROUP_DM" | "DM" => {
     if (tab.userId) return "DM";
     if (tab.guildId) return "GUILD_CHANNEL";

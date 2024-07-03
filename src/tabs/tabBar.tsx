@@ -2,7 +2,14 @@
 /** @jsxFrag */
 import {css, jsx} from '@emotion/react'
 import styled from '@emotion/styled'
-import {getChannelFromUri, getOpenTabs, isUriAtTab, saveTabsState, Tab as TabInfo} from "./tabsManager";
+import {
+    createTabFromChannel,
+    getChannelFromUri,
+    getOpenTabs,
+    isUriAtTab,
+    saveTabsState,
+    Tab as TabInfo
+} from "./tabsManager";
 import {Tab} from "./tab";
 import React, {createElement, useEffect, useLayoutEffect, useRef, useState} from "react";
 import {
@@ -95,6 +102,8 @@ export const TabBar = (props: Props) => {
         const plugin = BdApi.Plugins.get("quinchs-discord")?.instance as Plugin | undefined;
         if (!plugin) return;
 
+        const onClose = plugin.onTabClose(onTabClose)
+        
         const onAdd = plugin.onTabAdd(tab => {
             setCurrentTab(tab);
 
@@ -115,6 +124,7 @@ export const TabBar = (props: Props) => {
         return () => {
             onAdd();
             onLocationChange();
+            onClose();
         }
 
     }, [tabs, currentTab]);
@@ -127,8 +137,6 @@ export const TabBar = (props: Props) => {
     }, []);
 
     const onAddRequested = async (type: string, record: any) => {
-        //return;
-        
         const pushTab = (tab: TabInfo) => {
             console.log(`Created tab from quickswitch type ${type}`, tab);
             setCurrentTab(tab);
@@ -149,13 +157,11 @@ export const TabBar = (props: Props) => {
                     name: channelName
                 })
                 break;
+            case "GROUP_DM":
             case "TEXT_CHANNEL":
             case "VOICE_CHANNEL":
-                pushTab({
-                    channelId: record.id, 
-                    guildId: record.guild_id,
-                    name: record.name
-                });
+                const tab = createTabFromChannel(record);
+                if (tab) pushTab(tab);
                 break;
             case "USER":
                 const dmChannelId = await getOrCreatePrivateChannelForUser(record.id);
@@ -164,12 +170,6 @@ export const TabBar = (props: Props) => {
                     channelId: dmChannelId, 
                     name: record.globalName,
                     userId: record.id
-                });
-                break;
-            case "GROUP_DM":
-                pushTab({
-                    channelId: record.id,
-                    name: record.name,
                 });
                 break;
                 default:
@@ -237,16 +237,9 @@ export const TabBar = (props: Props) => {
             return;
         }
 
-        const tab: TabInfo = {
-            name: channel.isDM()
-                ? ZLibrary.DiscordModules.UserStore.getUser(channel.getRecipientId()).globalName
-                : channel.name,
-            channelId: match.channelId,
-            guildId: channel.guild_id,
-            userId: channel.isDM()
-                ? ZLibrary.DiscordModules.UserStore.getUser(channel.getRecipientId()).id
-                : undefined
-        };
+        const tab = createTabFromChannel(channel);
+        
+        if (!tab) return;
 
         if(tabs.length === 0 ){
             setTabs([tab]);
