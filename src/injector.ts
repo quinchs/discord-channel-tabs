@@ -41,5 +41,6 @@ export const patchChannelMenu = (plugin: Plugin) => {
     return () => {
         channelContext();
         userContext();
+        groupContext();
     }
 }
