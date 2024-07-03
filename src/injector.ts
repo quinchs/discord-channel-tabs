@@ -1,10 +1,11 @@
-﻿import {createElement} from "react";
-import {TabArea} from "./tabs/tabArea";
-import Plugin from "./index";
+﻿import Plugin from "./index";
 import {buildCloseTabsMenuItems, buildTabsContextMenuItems} from "./tabs/contextMenu";
+import {createElement} from "react";
+import {TabBar} from "./tabs/tabBar";
 
 export const patchChatArea = (plugin: Plugin) => {
-    const chatAreaDOMNode = document.querySelector(".chat_a7d72e");
+    const chatName = BdApi.Webpack.getByKeys("chat", "avatar", "chatContent", {fatal: true}).chat;
+    const chatAreaDOMNode = document.querySelector(`.${chatName}`);
 
     if (!chatAreaDOMNode) return;
 
@@ -12,8 +13,20 @@ export const patchChatArea = (plugin: Plugin) => {
 
     if (!chatArea) return;
 
-    return BdApi.Patcher.after("quinchs-tabs", chatArea, "renderHeaderBar", (self: any, args: any, returnVal: any) => {
-        return createElement(TabArea, null, returnVal);
+    return BdApi.Patcher.after("quinchs-tabs", chatArea, "render", (self: any, args: any, returnVal: any) => {
+        console.log("RENDER", self, args, returnVal);
+
+        const target = BdApi.Utils.findInTree(
+            returnVal,
+            (prop: any) => prop?.className === chatName,
+            {
+                walkable: ["props", "children"],
+            }
+        );
+        
+        if (!target) return;
+
+        target.children.unshift(createElement(TabBar))
     });
 }
 
