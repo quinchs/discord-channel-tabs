@@ -2,7 +2,7 @@
 import {css, jsx} from '@emotion/react'
 import {getTabType, Tab} from "./tabsManager";
 import {connectStores} from "../discord/flux";
-import {UnreadStore} from "../discord/stores";
+import {GuildStore, UnreadStore, UserStatusStore, UserStore, UserTypingStore} from "../discord/stores";
 import {LegacyRef, useEffect, useRef} from "react";
 import styled from "@emotion/styled";
 import Spinner from "../discord/spinner";
@@ -111,9 +111,9 @@ const TabHeaderComponent = ({tab, innerRef, selected, onTabUpdated, ...state}: T
         const defaultIcon = "https://cdn.discordapp.com/embed/avatars/0.png";
 
         if (tab.guildId) {
-            return ZLibrary.DiscordModules.GuildStore.getGuild(tab.guildId)?.getIconURL(40, false) as string ?? defaultIcon;
+            return GuildStore.getGuild(tab.guildId)?.getIconURL(40, false) as string ?? defaultIcon;
         } else if (tab.userId) {
-            return ZLibrary.DiscordModules.UserStore.getUser(tab.userId)?.getAvatarURL(null, 40, false) as string ?? defaultIcon;
+            return UserStore.getUser(tab.userId)?.getAvatarURL(null, 40, false) as string ?? defaultIcon;
         }
 
         return defaultIcon;
@@ -167,22 +167,22 @@ interface TabState {
 }
 
 const hasUsersTyping = (channelId: string): boolean => {
-    const currentUserId = ZLibrary.DiscordModules.UserStore.getCurrentUser()?.id;
-    return !!Object.keys(ZLibrary.DiscordModules.UserTypingStore.getTypingUsers(channelId))
+    const currentUserId = UserStore.getCurrentUser()?.id;
+    return !!Object.keys(UserTypingStore.getTypingUsers(channelId))
         .find(x => x !== currentUserId)
 }
 
 //
 export default connectStores<TabState, Props>([
         UnreadStore,
-        ZLibrary.DiscordModules.UserTypingStore,
-        ZLibrary.DiscordModules.UserStatusStore
+        UserTypingStore,
+        UserStatusStore
     ], (props: Props) => ({
         unreadCount: UnreadStore.getUnreadCount(props.tab.channelId) as number | undefined,
         unreadIsEstimate: UnreadStore.isEstimated(props.tab.channelId) as boolean,
         hasUnread: UnreadStore.hasUnread(props.tab.channelId) as boolean,
         mentionCount: UnreadStore.getMentionCount(props.tab.channelId) as number,
         hasUsersTyping: hasUsersTyping(props.tab.channelId),
-        userStatus: props.tab.userId && ZLibrary.DiscordModules.UserStatusStore.getStatus(props.tab.userId),
+        userStatus: props.tab.userId && UserStatusStore.getStatus(props.tab.userId),
     })
 )(TabHeaderComponent);

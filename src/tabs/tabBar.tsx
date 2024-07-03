@@ -16,6 +16,7 @@ import {getOrCreatePrivateChannelForUser, resolveChannelIdFromGuildId, selectCha
 import {DragDropContext, Draggable, Droppable, DropResult} from "react-beautiful-dnd";
 import Plugin from "../index";
 import {AddTabButton} from "./addTabButton";
+import {ChannelStore} from "../discord/stores";
 
 type Props = {};
 
@@ -144,7 +145,7 @@ export const TabBar = (props: Props) => {
         switch (type) {
             case "GUILD":
                 const channelId = resolveChannelIdFromGuildId(record.id);
-                const channelName = ZLibrary.DiscordModules.ChannelStore.getChannel(channelId).name;
+                const channelName = ChannelStore.getChannel(channelId).name;
                 pushTab({
                     channelId,
                     guildId: record.id,
@@ -210,7 +211,7 @@ export const TabBar = (props: Props) => {
 
         if (!match) return;
 
-        const channel = ZLibrary.DiscordModules.ChannelStore.getChannel(match.channelId);
+        const channel = ChannelStore.getChannel(match.channelId);
 
         if (!channel) return;
 

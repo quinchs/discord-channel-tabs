@@ -11,6 +11,7 @@ import {
     groupDMContextMenuItems,
     guildChannelContextMenuItems
 } from "../discord/contextMenus/channelContextMenu";
+import {ChannelStore, GuildStore, UserStore} from "../discord/stores";
 
 type Props = HTMLAttributes<HTMLDivElement> & {
     selected: boolean;
@@ -181,7 +182,7 @@ export const Tab = ({tab, ...props}: Props) => {
             props: any
         } | undefined;
 
-        const channel = ZLibrary.DiscordModules.ChannelStore.getChannel(tab.channelId);
+        const channel = ChannelStore.getChannel(tab.channelId);
         if (!channel) return;
 
         switch (type) {
@@ -195,7 +196,7 @@ export const Tab = ({tab, ...props}: Props) => {
                 }
                 break;
             case "DM":
-                const user = ZLibrary.DiscordModules.UserStore.getUser(tab.userId);
+                const user = UserStore.getUser(tab.userId);
 
                 if (!user) return;
 
@@ -209,7 +210,7 @@ export const Tab = ({tab, ...props}: Props) => {
                 };
                 break;
             case "GUILD_CHANNEL":
-                const guild = ZLibrary.DiscordModules.GuildStore.getGuild(tab.guildId);
+                const guild = GuildStore.getGuild(tab.guildId);
 
                 if (!guild) return;
 

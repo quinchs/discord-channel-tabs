@@ -38,7 +38,6 @@ export const selectPrivateChannel = (
     channelsActor.selectPrivateChannel(channelId);
 }
 
-export const ScrollerThin = ZLibrary.DiscordModules.ScrollerThin;
 export const PlusIconMedium = icons.PlusMediumIcon;
 export const PlusIconSmall = icons.PlusSmallIcon;
 

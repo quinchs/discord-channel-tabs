@@ -1,4 +1,6 @@
-﻿export interface Tab {
+﻿import {UserStore} from "../discord/stores";
+
+export interface Tab {
     channelId: string;
     guildId?: string;
     userId?: string;
@@ -10,7 +12,7 @@ export const createTabFromChannel = (channel: any): Tab | undefined => {
         let name = channel.name;
         if (!name && channel.recipients) {
             name = channel.recipients
-                .map((x: string) => ZLibrary.DiscordModules.UserStore.getUser(x).globalName)
+                .map((x: string) => UserStore.getUser(x).globalName)
                 .join(", ");
         }
 
@@ -19,7 +21,7 @@ export const createTabFromChannel = (channel: any): Tab | undefined => {
             name: name ?? "Unknown Group"
         }
     } else if (channel.isDM()) {
-        const user = ZLibrary.DiscordModules.UserStore.getUser(channel.getRecipientId());
+        const user = UserStore.getUser(channel.getRecipientId());
         return {
             channelId: channel.id,
             name: user.globalName ?? user.username,

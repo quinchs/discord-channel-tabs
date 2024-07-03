@@ -43,8 +43,7 @@ module.exports = {
     externalsType: 'var',
     externals: {
         'react': 'BdApi.React',
-        'react-dom' : 'BdApi.ReactDOM',
-        'zerespluginlibrary': 'ZeresPluginLibrary'
+        'react-dom' : 'BdApi.ReactDOM'
     },
     resolve: {
         modules: ['node_modules'],
