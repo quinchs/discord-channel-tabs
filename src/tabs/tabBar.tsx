@@ -186,15 +186,6 @@ export const TabBar = (props: Props) => {
             ...tabs.slice(0, tabIndex),
             ...tabs.slice(tabIndex + 1)
         ];
-
-        if(tab === currentTab) {
-            const targetTab = tabIndex === 0
-                ? tabs.length > 1
-                    ? tabs[tabIndex + 1]
-                    : undefined
-                : tabs[tabIndex - 1];
-            if (targetTab) onTabNavigate(targetTab);
-        }
         
         setTabs(newTabs);
         saveTabsState(newTabs);
