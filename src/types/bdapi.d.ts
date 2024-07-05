@@ -1307,6 +1307,8 @@ declare namespace WebpackModule {
          * Whether to execute the filter on webpack exports. Defaults to false.
          */
         searchExports?: boolean;
+
+        fatal?: boolean;
     }
 
     type Filter = (item: any) => any;

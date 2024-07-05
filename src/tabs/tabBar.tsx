@@ -11,7 +11,7 @@ import {
     Tab as TabInfo
 } from "./tabsManager";
 import {Tab} from "./tab";
-import React, {useEffect, useRef, useState} from "react";
+import React, {useEffect, useRef, useState, MouseEvent} from "react";
 import {getOrCreatePrivateChannelForUser, resolveChannelIdFromGuildId, selectChannel} from "../discord";
 import {DragDropContext, Draggable, Droppable, DropResult} from "react-beautiful-dnd";
 import Plugin from "../index";
@@ -266,8 +266,12 @@ export const TabBar = (props: Props) => {
 
         setTabs(newTabs);
         saveTabsState(newTabs);
+        
+        if (isUriAtTab(window.location.pathname, tab)) {
+            setCurrentTab(tab);
+        }
     }
-
+    
     return (
         <DragDropContext
             onBeforeDragStart={e => {
@@ -351,8 +355,12 @@ export const TabBar = (props: Props) => {
                                                         e.stopPropagation();
                                                         onTabClose(tab);
                                                     }}
-                                                    onClick={() => {
-                                                        onTabNavigate(tab);
+                                                    onClick={() => onTabNavigate(tab)}
+                                                    onAuxClick={e => {
+                                                        if (e.button === 1) { // middle mouse button
+                                                            e.preventDefault();
+                                                            onTabClose(tab);
+                                                        }
                                                     }}
                                                 />
                                             )

@@ -27,3 +27,8 @@ export const UserStatusStore = BdApi.Webpack.getModule(
     BdApi.Webpack.Filters.byProps("getStatus", "getState"),
     {fatal: true}
 )! as any;
+
+export const MessageStore = BdApi.Webpack.getModule(
+    BdApi.Webpack.Filters.byProps("getMessage", "getMessages"),
+    {fatal: true}
+)! as any;

@@ -2,7 +2,7 @@
 import {css, jsx} from '@emotion/react'
 import styled from '@emotion/styled'
 import {CloseIcon} from "../icons/closeIcon";
-import {HTMLAttributes, LegacyRef, MouseEvent, useEffect, useRef, useState} from "react";
+import {createContext, HTMLAttributes, LegacyRef, MouseEvent, MutableRefObject, Ref, useRef, useState} from "react";
 import {getTabType, Tab as TabData} from "./tabsManager";
 import TabHeader from "./tabHeader";
 import {ContextMenuRenderer, openContextMenu} from "../discord/contextMenus/contextMenuDispatcher";
@@ -12,6 +12,8 @@ import {
     guildChannelContextMenuItems
 } from "../discord/contextMenus/channelContextMenu";
 import {ChannelStore, GuildStore, UserStore} from "../discord/stores";
+import {TabPopout} from "./tabPopout";
+import {useStateFromStores} from "../discord";
 
 type Props = HTMLAttributes<HTMLDivElement> & {
     selected: boolean;
@@ -77,9 +79,9 @@ const selectedCSS = css`
     }
 `
 
-const growStyles = (sz: number | undefined, closeVisible: boolean) => css`
+const growStyles = (sz: number | undefined) => css`
     ${sz && css`
-        width: ${sz + (closeVisible ? 20 : 0)}px;
+        width: ${sz}px;
     `}
 `
 
@@ -103,32 +105,23 @@ const TabContentContainer = styled.section`
     margin-bottom: 4px;
 `
 
+export interface TabContextType {
+    scrollerRef: MutableRefObject<HTMLElement | null>
+    channel: any,
+}
+export const TabContext = createContext<TabContextType | null>(null)
+
 export const Tab = ({tab, ...props}: Props) => {
+    const scrollerRef = useRef<HTMLElement | null>(null);
+    
     const tabContainerRef = useRef<HTMLSpanElement>(null);
 
     const [tabWidth, setTabWidth] = useState<number>();
-
-    const [tabGrow, setTabGrow] = useState<boolean>(props.selected);
-    const [closeVisible, setCloseVisible] = useState(props.selected);
+    const [popoutOpen, setPopoutOpen] = useState(props.selected);
+    const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(tab.channelId));
 
     const openTimeoutId = useRef<NodeJS.Timeout>();
     const closeTimeoutId = useRef<NodeJS.Timeout>();
-
-    useEffect(() => {
-        if (tabContainerRef.current && tabContainerRef.current.clientWidth !== tabWidth) {
-            setTabWidth(tabContainerRef.current.clientWidth);
-        }
-    }, [tabContainerRef.current]);
-
-    useEffect(() => {
-        if (props.selected && (!closeVisible || !tabGrow)) {
-            setCloseVisible(true);
-            setTabGrow(true);
-        } else if (!props.selected) {
-            setTabGrow(false);
-            closeTimeoutId.current = setTimeout(() => setCloseVisible(false), 100);
-        }
-    }, [props.selected]);
 
     const onMouseEnter = (e: MouseEvent<HTMLDivElement>) => {
         if (props.onMouseEnter)
@@ -147,31 +140,28 @@ export const Tab = ({tab, ...props}: Props) => {
 
         // wait 0.4s before showing the close icon
         openTimeoutId.current = setTimeout(() => {
-            setCloseVisible(true);
-            setTabGrow(true);
-        }, 400);
+            setPopoutOpen(true);
+        }, 800);
     }
 
     const onMouseLeave = (e: MouseEvent<HTMLDivElement>) => {
+        console.log("left", e);
         if (props.onMouseLeave)
             props.onMouseLeave(e)
 
         if (props.selected) return;
 
-        if (openTimeoutId.current) {
-            clearTimeout(openTimeoutId.current);
-            openTimeoutId.current = undefined;
-        }
-
-        if (closeTimeoutId.current) {
-            clearTimeout(closeTimeoutId.current)
-        }
-
-        // immediately start shrinking the tab
-        setTabGrow(false);
+        // if (openTimeoutId.current) {
+        //     clearTimeout(openTimeoutId.current);
+        //     openTimeoutId.current = undefined;
+        // }
+        //
+        // if (closeTimeoutId.current) {
+        //     clearTimeout(closeTimeoutId.current)
+        // }
 
         // wait 0.1s for the animation before removing the close icon.
-        closeTimeoutId.current = setTimeout(() => setCloseVisible(false), 100);
+        //closeTimeoutId.current = setTimeout(() => setPopoutOpen(false), 100);
     }
 
     const contextMenu = (e: MouseEvent<HTMLDivElement>) => {
@@ -233,39 +223,62 @@ export const Tab = ({tab, ...props}: Props) => {
     }
 
     return (
-        <TabElement
-            {...props}
-            onContextMenu={contextMenu}
-            ref={props.innerRef}
-            onMouseEnter={onMouseEnter}
-            onMouseLeave={onMouseLeave}
-            css={css`
+        <TabContext.Provider
+            value={{
+                channel,
+                scrollerRef
+            }}
+        >
+            <TabElement
+                {...props}
+                onContextMenu={contextMenu}
+                ref={props.innerRef}
+                onMouseEnter={onMouseEnter}
+                onMouseLeave={onMouseLeave}
+                onWheel={event => {
+                    console.log(scrollerRef, event);
+                    if(scrollerRef.current) {
+                        // @ts-ignore
+                        scrollerRef.current.getScrollerNode().scrollTop += event.deltaY;
+                    }
+                }}
+                css={css`
                 cursor: ${props.isDragging ? "grab" : "pointer"} !important;
                 transition: width 0.1s ease-in-out, background-color 0.2s;
 
+                ${growStyles(tabWidth)}
                 ${props.selected && !props.isDragging && selectedCSS};
-                ${growStyles(tabWidth, props.selected || tabGrow)};
                 ${props.isDragging && css`
                     background-color: #FFFFFF20;
                 `}
             `}
-        >
-            <TabContentContainer>
-                <TabHeader
+            >
+                <TabPopout
+                    popoutOpen={popoutOpen}
                     selected={props.selected}
-                    tab={tab}
-                    innerRef={tabContainerRef}
-                    onTabUpdated={() => {
-                        if (!tabContainerRef.current) return;
+                    onRequestClose={() => setPopoutOpen(false)}
+                    channel={channel}
+                >
+                    {(popoutProps, details) => (
+                        <TabContentContainer {...popoutProps}>
+                            <TabHeader
+                                selected={props.selected}
+                                tab={tab}
+                                innerRef={tabContainerRef}
+                                onTabUpdated={() => {
+                                    if (!tabContainerRef.current) return;
 
-                        if (tabContainerRef.current?.clientWidth !== tabWidth) {
-                            setTabWidth(tabContainerRef.current.clientWidth);
-                        }
+                                    if (tabContainerRef.current?.clientWidth !== tabWidth) {
+                                        setTabWidth(tabContainerRef.current.clientWidth);
+                                    }
 
-                    }}
-                />
-                {closeVisible && <CloseIcon css={closeIconStyles} onClick={props.onClose}/>}
-            </TabContentContainer>
-        </TabElement>
+                                }}
+                            />
+                            <CloseIcon css={closeIconStyles} onClick={props.onClose}/>
+                        </TabContentContainer>
+                    )}
+                </TabPopout>
+            </TabElement>
+        </TabContext.Provider>
     );
 };
