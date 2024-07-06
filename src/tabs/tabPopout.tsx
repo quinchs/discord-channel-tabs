@@ -1,4 +1,5 @@
 ﻿/** @jsx jsx */
+/** @jsxfrag */
 import {css, jsx} from '@emotion/react'
 import {
     ChannelStreamItemTypes, EmptyMessage,
@@ -11,11 +12,20 @@ import {
     ThreadStarterMessage,
     useStateFromStores
 } from "../discord";
-import {HTMLAttributes, PropsWithChildren, ReactNode, useContext, useEffect, useRef} from "react";
-import {MessageStore, UnreadStore} from "../discord/stores";
+import {createElement, HTMLAttributes, PropsWithChildren, ReactNode, useContext, useEffect, useRef} from "react";
+import {GuildStore, MessageStore, UnreadStore} from "../discord/stores";
 import styled from "@emotion/styled";
 import {Chat} from "../discord/classNames";
 import {TabContext} from "./tab";
+import {ChatBoxComponentType} from "../discord/discord";
+import {
+    chatInputTypes,
+    chatRelatedClassNames,
+    textAreaRelatedClassNames,
+    tryGetChatComponentClass
+} from "../discord/chatBox";
+import {ChatBoxComponent} from "../discord/chatBoxComponent";
+import React from 'react';
 
 type Props = {
     popoutOpen: boolean;
@@ -37,41 +47,78 @@ const Divider = styled(MessageDivider)`
 `
 
 const PopoutPreviewContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     height: 30vh;
-    pointer-events: none;
-    background: color-mix(in lch, var(--background-secondary) 75%, var(--background-tertiary));
-    border-radius: 10px;
     min-height: 150px;
     width: 30vw;
     min-width: 350px;
     overflow: hidden;
+    border-radius: 10px;
+    margin-top: 20px;
     
-    * {
-        pointer-events: none !important;
+    .${chatRelatedClassNames.channelTextArea} {
+        border-radius: 0 0 8px 8px !important;
+    }
+    
+    .${textAreaRelatedClassNames.scrollableContainer} {
+        border-radius: 0 0 8px 8px !important;
     }
 `;
 
 const PopoutPreviewContent = styled.div`
     padding-bottom: 25px;
-    
+
     * {
         list-style: none;
     }
 `;
 
 const PinToBottomScroller = styled(PinToBottomScrollerAuto)`
+    background: color-mix(in lch, var(--background-secondary) 75%, var(--background-tertiary));
     display: flex;
     flex-direction: column-reverse;
     overflow-anchor: auto;
     height: 30vh;
+    width: 100%;
+    scroll-behavior: smooth;
 `
 
-const PopoutHeader = styled.h3`
-
+const PopoutHeader = styled.span`
+    background-color:  color-mix(in lch, var(--background-secondary) 40%, var(--background-tertiary));
+    height: 20px;
+    display: flex;
+    position: relative;
+    
+    &:after {
+        content: "";
+        position: absolute;
+        height: 14px;
+        width: 14px;
+        right: -14px;
+        border-bottom-left-radius: 14px;
+        bottom: 0;
+        background-color: transparent;
+        box-shadow: -4px 4px 0 0 color-mix(in lch, var(--background-secondary) 40%, var(--background-tertiary));
+    }
+    &:before {
+        content: "";
+        position: absolute;
+        height: 14px;
+        width: 14px;
+        left: -14px;
+        border-bottom-right-radius: 14px;
+        bottom: 0;
+        background-color: transparent;
+        box-shadow: 4px 4px 0 0 color-mix(in lch, var(--background-secondary) 40%, var(--background-tertiary));
+    }
 `;
 
 const PopoutRenderer = (props: { messages: any, channel: any }) => {
     const tabContext = useContext(TabContext);
+    
+    if (!tabContext) return (<></>);
     
     const oldestUnreadMessageId = useStateFromStores([UnreadStore], () => UnreadStore.getOldestUnreadMessageId(props.channel.id));
 
@@ -87,7 +134,9 @@ const PopoutRenderer = (props: { messages: any, channel: any }) => {
     }
 
     return (
-        <PopoutPreviewContainer>
+        <PopoutPreviewContainer
+            ref={tabContext.popoutRef}
+        >
             <PinToBottomScroller
                 ref={tabContext?.scrollerRef}
                 contentClassName={Chat.scrollerContent}
@@ -97,9 +146,6 @@ const PopoutRenderer = (props: { messages: any, channel: any }) => {
                 }}
             >
                 <PopoutPreviewContent>
-                    {!props.messages.hasMoreBefore && (
-                        <PopoutHeader>Displaying last 50 messages.</PopoutHeader>
-                    )}
                     {channelStream.map((item, index) => {
                         switch (item.type) {
                             case "NONE":
@@ -137,6 +183,11 @@ const PopoutRenderer = (props: { messages: any, channel: any }) => {
                     })}
                 </PopoutPreviewContent>
             </PinToBottomScroller>
+            <ChatBoxComponent
+                channel={tabContext.channel}
+                guild={tabContext.guild}
+                chatInputType={chatInputTypes.OVERLAY}
+            />
         </PopoutPreviewContainer>
     )
 }
@@ -154,10 +205,10 @@ export const TabPopout = (props: Props) => {
 
     return (
         <Popout
-            animation={'1'}
             position={"bottom"}
             align={"center"}
-            renderPopout={() => {
+            renderPopout={(data: any) => {
+                console.log("popout data", data);
                 try {
                     return (<PopoutRenderer messages={messages} channel={props.channel}/>)
                 } catch (err) {
@@ -166,8 +217,7 @@ export const TabPopout = (props: Props) => {
                 }
             }}
             shouldShow={props.popoutOpen && !props.selected}
-            spacing={16}
-            disablePointerEvents={true}
+            spacing={0}
             onRequestClose={props.onRequestClose}
             children={props.children}
         />

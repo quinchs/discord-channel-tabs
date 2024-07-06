@@ -3,6 +3,8 @@
     {fatal: true}
 )! as any;
 
+export const PendingReplyStore = BdApi.Webpack.getStore("PendingReplyStore")!;
+
 export const ChannelStore = BdApi.Webpack.getModule(
     BdApi.Webpack.Filters.byProps("getChannel", "getDMFromUserId"),
     {fatal: true}

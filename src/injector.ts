@@ -2,9 +2,10 @@
 import {buildCloseTabsMenuItems, buildTabsContextMenuItems} from "./tabs/contextMenu";
 import {createElement} from "react";
 import {TabBar} from "./tabs/tabBar";
+import {chatRelatedClassNames} from "./discord/chatBox";
 
 export const patchChatArea = (plugin: Plugin) => {
-    const chatName = BdApi.Webpack.getByKeys("chat", "avatar", "chatContent", {fatal: true}).chat;
+    const chatName = chatRelatedClassNames.chat;
     const chatAreaDOMNode = document.querySelector(`.${chatName}`);
 
     if (!chatAreaDOMNode) return;

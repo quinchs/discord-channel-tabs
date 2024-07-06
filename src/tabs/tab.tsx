@@ -2,7 +2,16 @@
 import {css, jsx} from '@emotion/react'
 import styled from '@emotion/styled'
 import {CloseIcon} from "../icons/closeIcon";
-import {createContext, HTMLAttributes, LegacyRef, MouseEvent, MutableRefObject, Ref, useRef, useState} from "react";
+import {
+    createContext,
+    HTMLAttributes,
+    MouseEvent,
+    MutableRefObject,
+    RefCallback,
+    RefObject,
+    useRef,
+    useState
+} from "react";
 import {getTabType, Tab as TabData} from "./tabsManager";
 import TabHeader from "./tabHeader";
 import {ContextMenuRenderer, openContextMenu} from "../discord/contextMenus/contextMenuDispatcher";
@@ -18,10 +27,30 @@ import {useStateFromStores} from "../discord";
 type Props = HTMLAttributes<HTMLDivElement> & {
     selected: boolean;
     onClose: (e: MouseEvent<SVGSVGElement>) => void;
-    innerRef: LegacyRef<HTMLDivElement> | undefined;
+    innerRef: RefCallback<HTMLDivElement> | undefined;
     isDragging: boolean;
     tab: TabData;
 };
+
+
+
+const TabElementHovered = css`
+    background-color: color-mix(in lch, var(--background-secondary) 40%, var(--background-tertiary))
+`;
+
+const TabElementPopoutOpen = css`
+    position: relative;
+    ${TabElementHovered}
+    
+    &:before {
+        content: "";
+        position: absolute;
+        width: 100%;
+        height: 20px;
+        bottom: -20px;
+        background-color: red;
+    }
+`;
 
 const TabElement = styled.div`
     position: relative;
@@ -37,7 +66,7 @@ const TabElement = styled.div`
     cursor: pointer;
 
     &:hover {
-        background-color: color-mix(in lch, var(--background-secondary) 40%, var(--background-tertiary))
+        ${TabElementHovered}
     }
 `
 
@@ -107,14 +136,21 @@ const TabContentContainer = styled.section`
 
 export interface TabContextType {
     scrollerRef: MutableRefObject<HTMLElement | null>
+    tabRef: RefObject<HTMLElement> | undefined
     channel: any,
+    guild?: any
+    tab: TabData,
+    popoutRef: RefObject<HTMLDivElement>,
+    tabWidth: number | undefined
 }
+
 export const TabContext = createContext<TabContextType | null>(null)
 
 export const Tab = ({tab, ...props}: Props) => {
     const scrollerRef = useRef<HTMLElement | null>(null);
-    
     const tabContainerRef = useRef<HTMLSpanElement>(null);
+    const tabElementRef = useRef<HTMLDivElement | null>(null);
+    const popoutRef = useRef<HTMLDivElement | null>(null);
 
     const [tabWidth, setTabWidth] = useState<number>();
     const [popoutOpen, setPopoutOpen] = useState(props.selected);
@@ -123,20 +159,18 @@ export const Tab = ({tab, ...props}: Props) => {
     const openTimeoutId = useRef<NodeJS.Timeout>();
     const closeTimeoutId = useRef<NodeJS.Timeout>();
 
+    const resetTimerStates = () => {
+        clearTimeout(openTimeoutId.current);
+        clearTimeout(closeTimeoutId.current);
+    }
+
     const onMouseEnter = (e: MouseEvent<HTMLDivElement>) => {
         if (props.onMouseEnter)
             props.onMouseEnter(e);
 
         if (props.selected) return;
 
-        if (closeTimeoutId.current) {
-            clearTimeout(closeTimeoutId.current);
-            closeTimeoutId.current = undefined;
-        }
-
-        if (openTimeoutId.current) {
-            clearTimeout(openTimeoutId.current);
-        }
+        resetTimerStates();
 
         // wait 0.4s before showing the close icon
         openTimeoutId.current = setTimeout(() => {
@@ -145,25 +179,25 @@ export const Tab = ({tab, ...props}: Props) => {
     }
 
     const onMouseLeave = (e: MouseEvent<HTMLDivElement>) => {
-        console.log("left", e);
         if (props.onMouseLeave)
             props.onMouseLeave(e)
 
         if (props.selected) return;
 
-        // if (openTimeoutId.current) {
-        //     clearTimeout(openTimeoutId.current);
-        //     openTimeoutId.current = undefined;
-        // }
-        //
-        // if (closeTimeoutId.current) {
-        //     clearTimeout(closeTimeoutId.current)
-        // }
-
-        // wait 0.1s for the animation before removing the close icon.
-        //closeTimeoutId.current = setTimeout(() => setPopoutOpen(false), 100);
+        resetTimerStates();
+        setPopoutOpen(false);
     }
 
+    const handleTabClick = (e: MouseEvent<HTMLDivElement>) => {
+        // don't do the onclick for parent in popout
+        if (popoutRef.current?.contains(e.target as HTMLElement)) {
+            return;
+        } 
+        
+        if (props.onClick)
+            props.onClick(e);
+    }
+    
     const contextMenu = (e: MouseEvent<HTMLDivElement>) => {
         const type = getTabType(tab);
 
@@ -225,33 +259,47 @@ export const Tab = ({tab, ...props}: Props) => {
     return (
         <TabContext.Provider
             value={{
+                tabRef: tabElementRef,
                 channel,
-                scrollerRef
+                guild: tab.guildId && GuildStore.getGuild(tab.guildId),
+                scrollerRef,
+                tab,
+                popoutRef,
+                tabWidth: tabWidth,
             }}
         >
             <TabElement
                 {...props}
+                onClick={handleTabClick}
                 onContextMenu={contextMenu}
-                ref={props.innerRef}
+                ref={e => {
+                    if (props.innerRef) {
+                        props.innerRef(e);
+                    }
+
+                    tabElementRef.current = e;
+                }}
                 onMouseEnter={onMouseEnter}
                 onMouseLeave={onMouseLeave}
                 onWheel={event => {
-                    console.log(scrollerRef, event);
-                    if(scrollerRef.current) {
+                    if (scrollerRef.current) {
                         // @ts-ignore
-                        scrollerRef.current.getScrollerNode().scrollTop += event.deltaY;
+                        // scrollerRef.current.getScrollerNode().scrollBy({
+                        //     top: event.deltaY,
+                        // })
                     }
                 }}
                 css={css`
-                cursor: ${props.isDragging ? "grab" : "pointer"} !important;
-                transition: width 0.1s ease-in-out, background-color 0.2s;
-
-                ${growStyles(tabWidth)}
-                ${props.selected && !props.isDragging && selectedCSS};
-                ${props.isDragging && css`
-                    background-color: #FFFFFF20;
+                    cursor: ${props.isDragging ? "grab" : "pointer"} !important;
+                    transition: width 0.1s ease-in-out, background-color 0.2s;
+                    
+                    ${popoutOpen && TabElementPopoutOpen};
+                    //${growStyles(tabWidth)};
+                    ${props.selected && !props.isDragging && selectedCSS};
+                    ${props.isDragging && css`
+                        background-color: #FFFFFF20;
+                    `}
                 `}
-            `}
             >
                 <TabPopout
                     popoutOpen={popoutOpen}
@@ -267,6 +315,8 @@ export const Tab = ({tab, ...props}: Props) => {
                                 innerRef={tabContainerRef}
                                 onTabUpdated={() => {
                                     if (!tabContainerRef.current) return;
+                                    
+                                    //console.log("tab updated", tabContainerRef.current.clientWidth);
 
                                     if (tabContainerRef.current?.clientWidth !== tabWidth) {
                                         setTabWidth(tabContainerRef.current.clientWidth);
@@ -274,7 +324,7 @@ export const Tab = ({tab, ...props}: Props) => {
 
                                 }}
                             />
-                            <CloseIcon css={closeIconStyles} onClick={props.onClose}/>
+                            {props.selected && <CloseIcon css={closeIconStyles} onClick={props.onClose}/>}
                         </TabContentContainer>
                     )}
                 </TabPopout>

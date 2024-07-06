@@ -936,7 +936,7 @@ declare namespace ReactUtilsModule {
          * @param node Node to get the React data from
          * @returns Either the found data or {@code undefined}
          */
-        getInternalInstance(node: HTMLElement): ReactInstance.ReactNode;
+        getInternalInstance(node: Element): ReactInstance.ReactNode;
 
         /**
          * Attempts to find the "owner" node to the current node. This is generally a node with a stateNode--a class
@@ -1401,5 +1401,7 @@ declare namespace WebpackModule {
         getByStrings(...filter: (string | WebpackAsyncModuleSearchOptions)[]): any | null;
 
         getAllByStrings(...query: string[]): any | null;
+
+        getStore(store: string): any;
     }
 }
