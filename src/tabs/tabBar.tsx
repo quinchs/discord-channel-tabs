@@ -89,14 +89,15 @@ export const TabBar = (props: Props) => {
     const tabRefs = useRef<Map<string, HTMLElement | null>>(new Map);
     const dragTargetBounds = useRef<DOMRect | null>();
 
-    const [isReordering, setIsReordering] = React.useState(false);
+    const [isReordering, setIsReordering] = useState(false);
     const [tabBarBounds, setTabBarBounds] = useState<DOMRect>();
-    const [tabs, setTabs] = BdApi.React.useState<TabInfo[]>([]);
-    const [currentTab, setCurrentTab] = React.useState<TabInfo>();
-
+    const [tabs, setTabs] = useState<TabInfo[]>([]);
+    const [currentTab, setCurrentTab] = useState<TabInfo | null>(null);
+    const [outlinedTab, setOutlinedTab] = useState<TabInfo | null>(null);
+    
     const popoutContainerRef = useRef<HTMLDivElement | null>(null);
     const popoutTargetRef = useRef<HTMLElement | null>(null);
-    const [popoutTargetTab, setPopoutTargetTab] = React.useState<TabInfo | null>(null);
+    const [popoutTargetTab, setPopoutTargetTab] = useState<TabInfo | null>(null);
     const popoutControls = useRef<PopoutControlsState | null>(null);
 
     useEffect(() => {
@@ -105,6 +106,48 @@ export const TabBar = (props: Props) => {
 
         const onClose = plugin.onTabClose(onTabClose)
 
+        const onSelect = plugin.onTabSelectComplete(() => {
+            if (outlinedTab) {
+                onTabNavigate(outlinedTab);
+                setOutlinedTab(null);
+            }
+        });
+        
+        const onCurrentSelect = plugin.onCurrentTabSelect(() => {
+            if (currentTab) {
+                setOutlinedTab(currentTab);
+            }
+        })
+        
+        const onNext = plugin.onNextTabSelect(() => {
+            console.log("on next");
+            const target = outlinedTab ?? currentTab;
+            
+            const nextTab = !target 
+                ? tabs[tabs.length - 1]
+                : tabs[tabs.indexOf(target) + 1];
+            
+            console.log("next target", nextTab);
+            
+            if (!nextTab) return;
+            
+            setOutlinedTab(nextTab);
+        });
+        
+        const onPrev = plugin.onPreviousTabSelect(() => {
+            const target = outlinedTab ?? currentTab;
+
+            const nextTab = !target
+                ? tabs[0]
+                : tabs[tabs.indexOf(target) - 1];
+
+            console.log("next target", nextTab);
+            
+            if (!nextTab) return;
+
+            setOutlinedTab(nextTab);
+        })
+        
         const onAdd = plugin.onTabAdd(tab => {
             setCurrentTab(tab);
             selectChannel(tab.channelId, tab.guildId);
@@ -120,24 +163,28 @@ export const TabBar = (props: Props) => {
 
         const onLocationChange = plugin.onLocationSwitch(() => {
             // find the tab that matches the location
-            const matchingTab = tabs.find(x => isUriAtTab(window.location.pathname, x));
+            const matchingTab = tabs.find(x => isUriAtTab(window.location.pathname, x)) ?? null;
 
             setCurrentTab(matchingTab);
         });
 
         return () => {
             onAdd();
+            onSelect();
+            onNext();
+            onPrev();
             onLocationChange();
             onClose();
+            onCurrentSelect();
         }
 
-    }, [tabs, currentTab]);
+    }, [tabs, currentTab, outlinedTab]);
 
     useEffect(() => {
         const savedTabs = getOpenTabs();
         setTabs(savedTabs);
 
-        setCurrentTab(savedTabs.find(x => isUriAtTab(window.location.pathname, x)));
+        setCurrentTab(savedTabs.find(x => isUriAtTab(window.location.pathname, x)) ?? null);
     }, []);
 
     const onAddRequested = async (type: string, record: any) => {
@@ -405,6 +452,7 @@ export const TabBar = (props: Props) => {
                                                             <Tab
                                                                 {...providedDraggable.draggableProps}
                                                                 {...providedDraggable.dragHandleProps}
+                                                                outlined={outlinedTab?.channelId === tab.channelId}
                                                                 onMouseEnter={event => handleTabMouseEnter(event, tab)}
                                                                 popoutPresent={popoutTargetTab?.channelId === tab.channelId}
                                                                 onRequestPopout={() => handleTabRequestPopout(tab)}

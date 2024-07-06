@@ -26,6 +26,7 @@ import {useStateFromStores} from "../discord";
 
 type Props = HTMLAttributes<HTMLDivElement> & {
     selected: boolean;
+    outlined: boolean;
     onClose: (e: MouseEvent<SVGSVGElement>) => void;
     innerRef: RefCallback<HTMLDivElement> | undefined;
     isDragging: boolean;
@@ -38,6 +39,10 @@ type Props = HTMLAttributes<HTMLDivElement> & {
 const TabElementHovered = css`
     background-color: color-mix(in lch, var(--background-secondary) 40%, var(--background-tertiary))
 `;
+
+const TabElementOutlined = css`
+    outline: 3px solid var(--indicator-selected-border)
+`
 
 const TabElementPopoutOpen = css`
     position: relative;
@@ -280,10 +285,11 @@ export const Tab = ({tab, ...props}: Props) => {
             css={css`
                     cursor: ${props.isDragging ? "grab" : "pointer"} !important;
                     transition: width 0.1s ease-in-out, background-color 0.2s;
-                    
-                    ${props.popoutPresent && TabElementPopoutOpen};
-                    //${growStyles(tabWidth)};
-                    ${props.selected && !props.isDragging && selectedCSS};
+                
+                    ${props.outlined && TabElementOutlined}
+                    ${props.popoutPresent && !props.isDragging && TabElementPopoutOpen};
+                    ${growStyles(tabWidth)};
+                    ${props.selected && !props.isDragging && !props.popoutPresent && selectedCSS};
                     ${props.isDragging && css`
                         background-color: #FFFFFF20;
                     `}

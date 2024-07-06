@@ -17,7 +17,7 @@ type Props = {
 };
 
 const renderChatBox = (props: Props, component: typeof ChatBoxComponentType) => {
-    const [focused, setFocused] = useState(false);
+    const [focused, setFocused] = useState(true);
     const [highlighted, setHighlighted] = useState(false);
     
     useEffect(() => {

@@ -69,10 +69,12 @@ const PopoutPreviewContainer = styled.div`
     max-width: 600px;
     overflow: hidden;
     border-radius: 10px;
-    //margin-top: 20px;
+    
+    box-shadow: var(--elevation-stroke), var(--elevation-high);
 
     .${chatRelatedClassNames.channelTextArea} {
         border-radius: 0 0 8px 8px !important;
+        margin-bottom: 0 !important;
     }
 
     .${textAreaRelatedClassNames.scrollableContainer} {
@@ -93,7 +95,7 @@ const PopoutScrollingWrapper = styled(PinToBottomScrollerAuto)`
     display: flex;
     flex-direction: column-reverse;
     overflow-anchor: auto;
-    height: 30vh;
+    height: 100%;
     width: 100%;
     scroll-behavior: smooth;
 `

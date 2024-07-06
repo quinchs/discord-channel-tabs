@@ -9,21 +9,21 @@ export const patchPopoutTargetElementRef = (plugin: Plugin) => {
         BdApi.Webpack.Filters.byStrings('renderPopout', 'onRequestOpen', 'shouldShow', 'Unexpected position: '),
         {fatal: true, searchExports: true}
     )! as any;
-    
+
     const target = BdApi.Webpack.getByPrototypeKeys('getDomElement', 'setupShowPopout', {searchExports: true});
-    
+
     if (!target || !popoutCommon) return;
 
     const commonPopoutPatch = BdApi.Patcher.after("quinchs-tabs", popoutCommon.prototype, "render", (instance: any, args: any, returnVal: any) => {
         if (instance?.props?.popoutTargetElementRef && returnVal?.props) {
             returnVal.props.popoutTargetElementRef = instance.props.popoutTargetElementRef;
         }
-        
+
         if (instance?.props?.popoutClassName && returnVal?.props) {
             returnVal.props.popoutClassName = instance.props.popoutClassName;
         }
     });
-    
+
     const getDomElementPatch = BdApi.Patcher.instead("quinchs-tabs", target.prototype, "getDomElement", (instance: any, args: any, original: any) => {
         if (instance?.props?.popoutTargetElementRef) {
             if (instance.domElementRef) {
@@ -31,16 +31,16 @@ export const patchPopoutTargetElementRef = (plugin: Plugin) => {
             }
             return instance?.props?.popoutTargetElementRef.current
         }
-        
+
         return original(args);
     });
-    
+
     const popoutLayerPatch = BdApi.Patcher.after("quinchs-tabs", target.prototype, "renderLayer", (instance: any, args: any, returnVal: any) => {
         if (returnVal?.props?.children?.props && instance?.props?.popoutClassName) {
             returnVal.props.children.props.className = instance.props.popoutClassName;
         }
     })
-    
+
     return () => {
         commonPopoutPatch();
         popoutLayerPatch();
@@ -68,7 +68,7 @@ export const patchChatArea = (plugin: Plugin) => {
                 walkable: ["props", "children"],
             }
         );
-        
+
         if (!target) return;
 
         target.children.unshift(createElement(TabBar))
