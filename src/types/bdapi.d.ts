@@ -828,7 +828,7 @@ declare namespace PatcherModule {
          * the arguments of the original function, and the return value of the original function.
          * @returns Function that cancels the original patch.
          */
-        instead(caller: string, moduleToPatch: object, functionName: string, callback: () => void): () => void;
+        instead(caller: string, moduleToPatch: object, functionName: string, callback: Function): () => void;
 
         /**
          * Automatically cancels all patches created with a specific ID.
@@ -1375,6 +1375,8 @@ declare namespace WebpackModule {
      * @see https://github.com/BetterDiscord/BetterDiscord/blob/main/renderer/src/modules/api/webpack.js
      */
     class Webpack {
+        getByPrototypeKeys(...keys: (string | WebpackModuleSearchOptions)[]): any | undefined;
+        
         modules: any;
         readonly Filters: Filters;
 

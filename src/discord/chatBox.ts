@@ -1,4 +1,5 @@
 ﻿import {ChatBoxComponentType} from "./discord";
+import {ReactNode} from "react";
 
 export const chatInputTypes = BdApi.Webpack.getModule(
     BdApi.Webpack.Filters.byProps('OVERLAY', 'SIDEBAR'),
@@ -20,6 +21,12 @@ export const chatInputTypes = BdApi.Webpack.getModule(
     FORUM_CHANNEL_GUIDELINES: any
     ATOMIC_REACTOR_REPLY_INPUT: any
 };
+
+export const tabChatInputType = (() => {
+    let type = {...chatInputTypes.NORMAL};
+    type.analyticsName = "channel_tab";
+    return type;
+})();
 
 export const getPlaceholder = BdApi.Webpack.getModule(
     BdApi.Webpack.Filters.byStrings('placeholder', 'accessibilityLabel'),
@@ -121,3 +128,24 @@ export const tryGetChatComponentClass = () => {
     return chatBoxClassComponent = classType as typeof ChatBoxComponentType;
 }
 
+const messagesFormatting = BdApi.Webpack.getModule(
+    m => m.Messages && m._getParsedMessages && m.Messages.ONE_USER_TYPING, 
+    {searchExports: true}
+)! as any;
+
+export const formatUsersTyping = (guildId: string | undefined, channelId: string, typingUsers: any[]): ReactNode => {
+    if (typingUsers.length === 0) return;
+
+    let [a, b, c] = typingUsers;
+    
+    switch(typingUsers.length) {
+        case 1:
+            return messagesFormatting.Messages.ONE_USER_TYPING.format({a});
+        case 2:
+            return messagesFormatting.Messages.TWO_USERS_TYPING.format({a, b});
+        case 3:
+            return messagesFormatting.Messages.THREE_USERS_TYPING.format({a, b, c});
+        default:
+            return messagesFormatting.Messages.SEVERAL_USERS_TYPING;
+    }
+}

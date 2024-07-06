@@ -1,7 +1,7 @@
 ﻿/** @jsx jsx */
 /** @jsxFrag */
 import {css, jsx} from '@emotion/react'
-import {createElement, useEffect, useRef, useState} from "react";
+import {createElement, memo, useEffect, useRef, useState} from "react";
 import {ChatBoxComponentType} from "./discord";
 import {chatInputTypes, getPlaceholder, getShakeIntensity, tryGetChatComponentClass} from "./chatBox";
 import React from 'react';
@@ -70,7 +70,7 @@ const renderChatBox = (props: Props, component: typeof ChatBoxComponentType) => 
     })
 }
 
-export const ChatBoxComponent = (props: Props) => {
+export const ChatBoxComponent = memo((props: Props) => {
     const chatBox = useRef<typeof ChatBoxComponentType | null>(tryGetChatComponentClass());
     
     if(!chatBox.current)
@@ -79,4 +79,4 @@ export const ChatBoxComponent = (props: Props) => {
     if (!chatBox.current) return (<></>)
 
     return renderChatBox(props,  chatBox.current);
-};
+});

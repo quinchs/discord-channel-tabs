@@ -2,7 +2,7 @@
 import {
     ComponentClass,
     DetailedHTMLProps,
-    ForwardRefExoticComponent, FunctionComponent, HTMLAttributes, MemoExoticComponent,
+    ForwardRefExoticComponent, FunctionComponent, HTMLAttributes, MemoExoticComponent, MutableRefObject,
     PropsWithChildren,
     PropsWithoutRef,
     RefAttributes
@@ -19,8 +19,8 @@ const guildChannelResolver = Object.values(BdApi.Webpack.getModule(
     {fatal: true}
 ) as any)[0]! as (e: string) => string;
 
-export const fetchMessages = (channelId: string) => {
-    messagesActor.fetchMessages({ channelId,  limit: 50});
+export const fetchMessages = (channelId: string): Promise<void> => {
+    return messagesActor.fetchMessages({ channelId,  limit: 50});
 }
 
 export const getOrCreatePrivateChannelForUser = async (id: string): Promise<any> => {
@@ -64,7 +64,10 @@ export const Popout = common.Popout as ComponentClass<{
     spacing?: number,
     disablePointerEvents?: boolean,
     children: Function,
-    animation?: "1" | "2" | "3" | "4"
+    animation?: "1" | "2" | "3" | "4",
+    popoutTargetElementRef?: MutableRefObject<HTMLElement | null>,
+    popoutClassName?: string
+    preload?: () => Promise<void>
 }>;
 
 export const PinToBottomScrollerAuto = common.PinToBottomScrollerAuto as ForwardRefExoticComponent<
@@ -82,7 +85,7 @@ export const PinToBottomScrollerAuto = common.PinToBottomScrollerAuto as Forward
 export const Navigator = BdApi.Webpack.getModule(BdApi.Webpack.Filters.byProps("QUICKSWITCHER_SHOW")) as any;
 export const useStateFromStores = BdApi.Webpack.getModule(
     BdApi.Webpack.Filters.byStrings('useStateFromStores'), {searchExports: true, fatal: true}
-)! as <T>(stores: any[], func: () => T) => T;
+)! as <T>(stores: any[], func: () => T, dependencies?: any[]) => T;
 
 export const getChannelStream = BdApi.Webpack.getByStrings(
     'oldestUnreadMessageId', 'MESSAGE_GROUP_BLOCKED',

@@ -11,12 +11,13 @@ import {
     Tab as TabInfo
 } from "./tabsManager";
 import {Tab} from "./tab";
-import React, {useEffect, useRef, useState, MouseEvent} from "react";
+import React, {MouseEvent, useEffect, useRef, useState} from "react";
 import {getOrCreatePrivateChannelForUser, resolveChannelIdFromGuildId, selectChannel} from "../discord";
 import {DragDropContext, Draggable, Droppable, DropResult} from "react-beautiful-dnd";
 import Plugin from "../index";
 import {AddTabButton} from "./addTabButton";
 import {ChannelStore} from "../discord/stores";
+import {PopoutControlsState, TabPopout} from "./tabPopout";
 
 type Props = {};
 
@@ -32,7 +33,6 @@ const TabsContainer = styled.div`
     background-color: var(--background-secondary);
     height: 40px;
     min-height: 40px;
-    //overflow-x: scroll;
 `
 
 const TabSpacer = styled.span`
@@ -81,6 +81,10 @@ const TabPlunger = styled.div`
     }
 `;
 
+const TabBarArea = styled.section`
+    ${TabsContainer}
+`
+
 export const TabBar = (props: Props) => {
     const tabRefs = useRef<Map<string, HTMLElement | null>>(new Map);
     const dragTargetBounds = useRef<DOMRect | null>();
@@ -89,6 +93,11 @@ export const TabBar = (props: Props) => {
     const [tabBarBounds, setTabBarBounds] = useState<DOMRect>();
     const [tabs, setTabs] = BdApi.React.useState<TabInfo[]>([]);
     const [currentTab, setCurrentTab] = React.useState<TabInfo>();
+
+    const popoutContainerRef = useRef<HTMLDivElement | null>(null);
+    const popoutTargetRef = useRef<HTMLElement | null>(null);
+    const [popoutTargetTab, setPopoutTargetTab] = React.useState<TabInfo | null>(null);
+    const popoutControls = useRef<PopoutControlsState | null>(null);
 
     useEffect(() => {
         const plugin = BdApi.Plugins.get("quinchs-discord")?.instance as Plugin | undefined;
@@ -99,7 +108,7 @@ export const TabBar = (props: Props) => {
         const onAdd = plugin.onTabAdd(tab => {
             setCurrentTab(tab);
             selectChannel(tab.channelId, tab.guildId);
-            
+
             if (tabs.find(x => x.channelId === tab.channelId)) {
                 return;
             }
@@ -187,6 +196,10 @@ export const TabBar = (props: Props) => {
     }
 
     const onTabNavigate = (tab: TabInfo) => {
+        if (popoutTargetTab?.channelId === tab.channelId) {
+            setPopoutTargetTab(null);
+            popoutTargetRef.current = null;
+        }
         setCurrentTab(tab);
         selectChannel(tab.channelId, tab.guildId);
     }
@@ -266,12 +279,48 @@ export const TabBar = (props: Props) => {
 
         setTabs(newTabs);
         saveTabsState(newTabs);
-        
+
         if (isUriAtTab(window.location.pathname, tab)) {
             setCurrentTab(tab);
         }
     }
-    
+
+    const handleMouseLeave = (event: MouseEvent<HTMLDivElement>) => {
+        if (popoutTargetTab) {
+            setPopoutTargetTab(null);
+            popoutTargetRef.current = null;
+        }
+    }
+
+    const handleTabMouseEnter = (event: MouseEvent<HTMLDivElement>, tab: TabInfo) => {
+        if (popoutTargetTab && popoutTargetTab.channelId !== tab.channelId && tab.channelId !== currentTab?.channelId) {
+            popoutTargetRef.current = tabRefs.current.get(tab.channelId) ?? null;
+            setPopoutTargetTab(tab);
+
+            console.log("Switching to ", tab);
+
+            if (popoutControls.current) {
+                popoutControls.current.updatePosition();
+            }
+        }
+    }
+
+    const handleTabRequestPopout = (tab: TabInfo) => {
+        if (popoutTargetTab) return;
+        
+        if (!tabs.find(x => x.channelId === tab.channelId)) return;
+
+        popoutTargetRef.current = tabRefs.current.get(tab.channelId) ?? null;
+        setPopoutTargetTab(tab);
+    }
+
+    const handleTabClick = (event: MouseEvent<HTMLDivElement>, tab: TabInfo) => {
+        // @ts-ignore
+        if (popoutContainerRef.current?.contains(event.target)) return;
+
+        onTabNavigate(tab);
+    }
+
     return (
         <DragDropContext
             onBeforeDragStart={e => {
@@ -287,9 +336,10 @@ export const TabBar = (props: Props) => {
         >
             <Droppable droppableId="channel-tabs-droppable" direction="horizontal">
                 {(providedDroppable, snapshot) => (
-                    <TabsContainer
+                    <TabBarArea
                         {...providedDroppable.droppableProps}
                         onDrop={handleDrop}
+                        onMouseLeave={handleMouseLeave}
                         onDragOver={event => {
                             if (event.dataTransfer.types.includes("text/uri-list")) {
                                 event.dataTransfer.dropEffect = "copy";
@@ -315,71 +365,88 @@ export const TabBar = (props: Props) => {
                             }
                         }}
                     >
-                        {tabs.map((tab, i) => (
-                            <>
-                                <TabWrapper>
-                                    <Draggable key={tab.channelId} draggableId={tab.channelId} index={i}>
-                                        {(providedDraggable, snapshot) => {
-                                            // Restrict dragging to horizontal axis
-                                            let transform = providedDraggable.draggableProps.style?.transform;
+                        <TabPopout
+                            popoutContainerRef={popoutContainerRef}
+                            popoutControlsRef={popoutControls}
+                            popoutOpen={!!popoutTargetTab}
+                            popoutTargetRef={popoutTargetRef}
+                            popoutTargetTab={popoutTargetTab}
+                            onRequestClose={() => setPopoutTargetTab(null)}
+                        >
+                            {(popoutProps, details) => (
+                                <TabsContainer
+                                    {...popoutProps}
+                                >
+                                    {tabs.map((tab, i) => (
+                                        <>
+                                            <TabWrapper>
+                                                <Draggable key={tab.channelId} draggableId={tab.channelId} index={i}>
+                                                    {(providedDraggable, snapshot) => {
+                                                        // Restrict dragging to horizontal axis
+                                                        let transform = providedDraggable.draggableProps.style?.transform;
 
-                                            if (snapshot.isDragging && dragTargetBounds.current && tabBarBounds && transform) {
-                                                transform = transform.replace(/\(([-+]*\d+)px, [-+]*\d+px/, match => {
-                                                    const offset = Number.parseInt(match.slice(1))
+                                                        if (snapshot.isDragging && dragTargetBounds.current && tabBarBounds && transform) {
+                                                            transform = transform.replace(/\(([-+]*\d+)px, [-+]*\d+px/, match => {
+                                                                const offset = Number.parseInt(match.slice(1))
 
-                                                    const x = dragTargetBounds.current!.left + offset;
+                                                                const x = dragTargetBounds.current!.left + offset;
 
-                                                    const bounds = Math.min(tabBarBounds.right - dragTargetBounds.current!.width, Math.max(tabBarBounds.left, x)) - dragTargetBounds.current!.left;
-                                                    return `(${bounds}px, 0px`;
-                                                });
+                                                                const bounds = Math.min(tabBarBounds.right - dragTargetBounds.current!.width, Math.max(tabBarBounds.left, x)) - dragTargetBounds.current!.left;
+                                                                return `(${bounds}px, 0px`;
+                                                            });
 
-                                                // @ts-ignore
-                                                providedDraggable.draggableProps.style = {
-                                                    ...providedDraggable.draggableProps.style,
-                                                    transform
-                                                }
-                                            }
-                                            return (
-                                                <Tab
-                                                    {...providedDraggable.draggableProps}
-                                                    {...providedDraggable.dragHandleProps}
-                                                    tab={tab}
-                                                    isDragging={snapshot.isDragging}
-                                                    innerRef={(e) => {
-                                                        providedDraggable.innerRef(e);
-                                                        tabRefs.current.set(tab.channelId, e);
-                                                    }}
-                                                    selected={tab.channelId === currentTab?.channelId}
-                                                    onClose={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        onTabClose(tab);
-                                                    }}
-                                                    onClick={() => onTabNavigate(tab)}
-                                                    onAuxClick={e => {
-                                                        if (e.button === 1) { // middle mouse button
-                                                            e.preventDefault();
-                                                            onTabClose(tab);
+                                                            // @ts-ignore
+                                                            providedDraggable.draggableProps.style = {
+                                                                ...providedDraggable.draggableProps.style,
+                                                                transform
+                                                            }
                                                         }
+                                                        return (
+                                                            <Tab
+                                                                {...providedDraggable.draggableProps}
+                                                                {...providedDraggable.dragHandleProps}
+                                                                onMouseEnter={event => handleTabMouseEnter(event, tab)}
+                                                                popoutPresent={popoutTargetTab?.channelId === tab.channelId}
+                                                                onRequestPopout={() => handleTabRequestPopout(tab)}
+                                                                tab={tab}
+                                                                isDragging={snapshot.isDragging}
+                                                                innerRef={(e) => {
+                                                                    providedDraggable.innerRef(e);
+                                                                    tabRefs.current.set(tab.channelId, e);
+                                                                }}
+                                                                selected={tab.channelId === currentTab?.channelId}
+                                                                onClose={(e) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    onTabClose(tab);
+                                                                }}
+                                                                onClick={event => handleTabClick(event, tab)}
+                                                                onAuxClick={e => {
+                                                                    if (e.button === 1) { // middle mouse button
+                                                                        e.preventDefault();
+                                                                        onTabClose(tab);
+                                                                    }
+                                                                }}/>
+                                                        )
                                                     }}
-                                                />
-                                            )
-                                        }}
-                                    </Draggable>
-                                </TabWrapper>
-                                {i + 1 < tabs.length && (
-                                    <TabSpacer css={css`
-                                        ${isReordering && TabSpacerWhenDragging}
-                                    `}/>
-                                )}
-                            </>
+                                                </Draggable>
+                                            </TabWrapper>
+                                            {i + 1 < tabs.length && (
+                                                <TabSpacer css={css`
+                                                    ${isReordering && TabSpacerWhenDragging}
+                                                `}/>
+                                            )}
+                                        </>
 
-                        ))}
-                        {providedDroppable.placeholder}
-                        <TabPlunger>
-                            <AddTabButton onAdd={onAddRequested}/>
-                        </TabPlunger>
-                    </TabsContainer>
+                                    ))}
+                                    {providedDroppable.placeholder}
+                                    <TabPlunger>
+                                        <AddTabButton onAdd={onAddRequested}/>
+                                    </TabPlunger>
+                                </TabsContainer>
+                            )}
+                        </TabPopout>
+                    </TabBarArea>
                 )}
             </Droppable>
         </DragDropContext>

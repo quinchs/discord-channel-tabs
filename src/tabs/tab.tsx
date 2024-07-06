@@ -8,7 +8,7 @@ import {
     MouseEvent,
     MutableRefObject,
     RefCallback,
-    RefObject,
+    RefObject, useEffect,
     useRef,
     useState
 } from "react";
@@ -30,9 +30,10 @@ type Props = HTMLAttributes<HTMLDivElement> & {
     innerRef: RefCallback<HTMLDivElement> | undefined;
     isDragging: boolean;
     tab: TabData;
+    
+    onRequestPopout: () => void;
+    popoutPresent: boolean
 };
-
-
 
 const TabElementHovered = css`
     background-color: color-mix(in lch, var(--background-secondary) 40%, var(--background-tertiary))
@@ -41,14 +42,29 @@ const TabElementHovered = css`
 const TabElementPopoutOpen = css`
     position: relative;
     ${TabElementHovered}
-    
+
+    &:after {
+        content: "";
+        position: absolute;
+        height: 8px;
+        width: 8px;
+        right: -8px;
+        border-bottom-left-radius: 8px;
+        bottom: 0;
+        background-color: transparent;
+        box-shadow: -2px 2px 0 2px color-mix(in lch, var(--background-secondary) 40%, var(--background-tertiary));
+    }
+
     &:before {
         content: "";
         position: absolute;
-        width: 100%;
-        height: 20px;
-        bottom: -20px;
-        background-color: red;
+        height: 8px;
+        width: 8px;
+        left: -8px;
+        border-bottom-right-radius: 8px;
+        bottom: 0;
+        background-color: transparent;
+        box-shadow: 2px 2px 0 2px color-mix(in lch, var(--background-secondary) 40%, var(--background-tertiary));
     }
 `;
 
@@ -144,17 +160,11 @@ export interface TabContextType {
     tabWidth: number | undefined
 }
 
-export const TabContext = createContext<TabContextType | null>(null)
-
 export const Tab = ({tab, ...props}: Props) => {
-    const scrollerRef = useRef<HTMLElement | null>(null);
     const tabContainerRef = useRef<HTMLSpanElement>(null);
     const tabElementRef = useRef<HTMLDivElement | null>(null);
-    const popoutRef = useRef<HTMLDivElement | null>(null);
 
     const [tabWidth, setTabWidth] = useState<number>();
-    const [popoutOpen, setPopoutOpen] = useState(props.selected);
-    const channel = useStateFromStores([ChannelStore], () => ChannelStore.getChannel(tab.channelId));
 
     const openTimeoutId = useRef<NodeJS.Timeout>();
     const closeTimeoutId = useRef<NodeJS.Timeout>();
@@ -164,6 +174,10 @@ export const Tab = ({tab, ...props}: Props) => {
         clearTimeout(closeTimeoutId.current);
     }
 
+    useEffect(() => {
+        return resetTimerStates
+    }, []);
+
     const onMouseEnter = (e: MouseEvent<HTMLDivElement>) => {
         if (props.onMouseEnter)
             props.onMouseEnter(e);
@@ -172,10 +186,9 @@ export const Tab = ({tab, ...props}: Props) => {
 
         resetTimerStates();
 
-        // wait 0.4s before showing the close icon
         openTimeoutId.current = setTimeout(() => {
-            setPopoutOpen(true);
-        }, 800);
+            props.onRequestPopout();
+        }, 600);
     }
 
     const onMouseLeave = (e: MouseEvent<HTMLDivElement>) => {
@@ -185,17 +198,6 @@ export const Tab = ({tab, ...props}: Props) => {
         if (props.selected) return;
 
         resetTimerStates();
-        setPopoutOpen(false);
-    }
-
-    const handleTabClick = (e: MouseEvent<HTMLDivElement>) => {
-        // don't do the onclick for parent in popout
-        if (popoutRef.current?.contains(e.target as HTMLElement)) {
-            return;
-        } 
-        
-        if (props.onClick)
-            props.onClick(e);
     }
     
     const contextMenu = (e: MouseEvent<HTMLDivElement>) => {
@@ -257,78 +259,52 @@ export const Tab = ({tab, ...props}: Props) => {
     }
 
     return (
-        <TabContext.Provider
-            value={{
-                tabRef: tabElementRef,
-                channel,
-                guild: tab.guildId && GuildStore.getGuild(tab.guildId),
-                scrollerRef,
-                tab,
-                popoutRef,
-                tabWidth: tabWidth,
+        <TabElement
+            {...props}
+            onClick={e => {
+                resetTimerStates();
+                
+                if (props.onClick)
+                    props.onClick(e);
             }}
-        >
-            <TabElement
-                {...props}
-                onClick={handleTabClick}
-                onContextMenu={contextMenu}
-                ref={e => {
-                    if (props.innerRef) {
-                        props.innerRef(e);
-                    }
+            onContextMenu={contextMenu}
+            ref={e => {
+                if (props.innerRef) {
+                    props.innerRef(e);
+                }
 
-                    tabElementRef.current = e;
-                }}
-                onMouseEnter={onMouseEnter}
-                onMouseLeave={onMouseLeave}
-                onWheel={event => {
-                    if (scrollerRef.current) {
-                        // @ts-ignore
-                        // scrollerRef.current.getScrollerNode().scrollBy({
-                        //     top: event.deltaY,
-                        // })
-                    }
-                }}
-                css={css`
+                tabElementRef.current = e;
+            }}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
+            css={css`
                     cursor: ${props.isDragging ? "grab" : "pointer"} !important;
                     transition: width 0.1s ease-in-out, background-color 0.2s;
                     
-                    ${popoutOpen && TabElementPopoutOpen};
+                    ${props.popoutPresent && TabElementPopoutOpen};
                     //${growStyles(tabWidth)};
                     ${props.selected && !props.isDragging && selectedCSS};
                     ${props.isDragging && css`
                         background-color: #FFFFFF20;
                     `}
                 `}
-            >
-                <TabPopout
-                    popoutOpen={popoutOpen}
+        >
+            <TabContentContainer>
+                <TabHeader
                     selected={props.selected}
-                    onRequestClose={() => setPopoutOpen(false)}
-                    channel={channel}
-                >
-                    {(popoutProps, details) => (
-                        <TabContentContainer {...popoutProps}>
-                            <TabHeader
-                                selected={props.selected}
-                                tab={tab}
-                                innerRef={tabContainerRef}
-                                onTabUpdated={() => {
-                                    if (!tabContainerRef.current) return;
-                                    
-                                    //console.log("tab updated", tabContainerRef.current.clientWidth);
+                    tab={tab}
+                    innerRef={tabContainerRef}
+                    onTabUpdated={() => {
+                        if (!tabContainerRef.current) return;
 
-                                    if (tabContainerRef.current?.clientWidth !== tabWidth) {
-                                        setTabWidth(tabContainerRef.current.clientWidth);
-                                    }
+                        if (tabContainerRef.current?.clientWidth !== tabWidth) {
+                            setTabWidth(tabContainerRef.current.clientWidth);
+                        }
 
-                                }}
-                            />
-                            {props.selected && <CloseIcon css={closeIconStyles} onClick={props.onClose}/>}
-                        </TabContentContainer>
-                    )}
-                </TabPopout>
-            </TabElement>
-        </TabContext.Provider>
+                    }}
+                />
+                {props.selected && <CloseIcon css={closeIconStyles} onClick={props.onClose}/>}
+            </TabContentContainer>
+        </TabElement>
     );
 };

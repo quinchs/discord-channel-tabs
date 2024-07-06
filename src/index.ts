@@ -1,4 +1,4 @@
-import {patchChannelMenu, patchChatArea} from "./injector";
+import {patchChannelMenu, patchChatArea, patchPopoutTargetElementRef} from "./injector";
 import {Tab} from "./tabs/tabsManager";
 
 export default class Plugin extends EventTarget {
@@ -7,6 +7,7 @@ export default class Plugin extends EventTarget {
     patches: ((plugin: Plugin) => any | undefined)[] = [
         patchChatArea,
         patchChannelMenu,
+        patchPopoutTargetElementRef
     ];
     cleanUpFunctions: (() => void)[] = [];
 

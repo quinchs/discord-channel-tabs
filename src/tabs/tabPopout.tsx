@@ -1,8 +1,9 @@
 ﻿/** @jsx jsx */
 /** @jsxfrag */
-import {css, jsx} from '@emotion/react'
+import {ClassNames, css, jsx} from '@emotion/react'
 import {
-    ChannelStreamItemTypes, EmptyMessage,
+    ChannelStreamItemTypes,
+    EmptyMessage,
     fetchMessages,
     getChannelStream,
     Message,
@@ -12,34 +13,44 @@ import {
     ThreadStarterMessage,
     useStateFromStores
 } from "../discord";
-import {createElement, HTMLAttributes, PropsWithChildren, ReactNode, useContext, useEffect, useRef} from "react";
-import {GuildStore, MessageStore, UnreadStore} from "../discord/stores";
+import React, {HTMLAttributes, MutableRefObject, ReactNode, RefObject, useEffect, useState} from "react";
+import {ChannelStore, GuildStore, MessageStore, UnreadStore, UserStore, UserTypingStore} from "../discord/stores";
 import styled from "@emotion/styled";
 import {Chat} from "../discord/classNames";
-import {TabContext} from "./tab";
-import {ChatBoxComponentType} from "../discord/discord";
 import {
-    chatInputTypes,
     chatRelatedClassNames,
-    textAreaRelatedClassNames,
-    tryGetChatComponentClass
+    formatUsersTyping,
+    tabChatInputType,
+    textAreaRelatedClassNames
 } from "../discord/chatBox";
 import {ChatBoxComponent} from "../discord/chatBoxComponent";
-import React from 'react';
+import {Tab} from "./tabsManager";
+import Spinner from "../discord/spinner";
 
 type Props = {
+    popoutControlsRef: MutableRefObject<PopoutControlsState | null>,
     popoutOpen: boolean;
-    selected: boolean;
+    popoutTargetRef?: MutableRefObject<HTMLElement | null>,
+    popoutTargetTab: Tab | null,
     onRequestClose: () => void;
-    channel: any;
-    children: (props: HTMLAttributes<HTMLElement>, details: {isShown: boolean,  position: number}) => ReactNode;
+    children: (props: HTMLAttributes<HTMLElement>, details: { isShown: boolean, position: number }) => ReactNode;
+    popoutContainerRef: MutableRefObject<HTMLDivElement | null>
 };
+
+export interface PopoutControlsState {
+    closePopout: Function,
+    isPositioned: boolean,
+    nudge: number,
+    position: string,
+    setPopoutRef: Function,
+    updatePosition: () => void;
+}
 
 const Divider = styled(MessageDivider)`
     ${props => props.cut && css`
         margin-top: 40px !important;
         border-style: dashed;
-        
+
         span {
             font-weight: 400;
         }
@@ -51,17 +62,19 @@ const PopoutPreviewContainer = styled.div`
     flex-direction: column;
     align-items: center;
     height: 30vh;
-    min-height: 150px;
+    min-height: 450px;
+    max-height: 800px;
     width: 30vw;
     min-width: 350px;
+    max-width: 600px;
     overflow: hidden;
     border-radius: 10px;
-    margin-top: 20px;
-    
+    //margin-top: 20px;
+
     .${chatRelatedClassNames.channelTextArea} {
         border-radius: 0 0 8px 8px !important;
     }
-    
+
     .${textAreaRelatedClassNames.scrollableContainer} {
         border-radius: 0 0 8px 8px !important;
     }
@@ -75,8 +88,8 @@ const PopoutPreviewContent = styled.div`
     }
 `;
 
-const PinToBottomScroller = styled(PinToBottomScrollerAuto)`
-    background: color-mix(in lch, var(--background-secondary) 75%, var(--background-tertiary));
+const PopoutScrollingWrapper = styled(PinToBottomScrollerAuto)`
+    background: color-mix(in lch, var(--background-secondary) 40%, var(--background-tertiary));
     display: flex;
     flex-direction: column-reverse;
     overflow-anchor: auto;
@@ -86,45 +99,86 @@ const PinToBottomScroller = styled(PinToBottomScrollerAuto)`
 `
 
 const PopoutHeader = styled.span`
-    background-color:  color-mix(in lch, var(--background-secondary) 40%, var(--background-tertiary));
-    height: 20px;
+    background-color: color-mix(in lch, var(--background-secondary) 40%, var(--background-tertiary));
+    height: 8px;
+    min-height: 8px;
     display: flex;
     position: relative;
-    
+    //border-radius: 4px 4px 0 0;
+
     &:after {
         content: "";
         position: absolute;
-        height: 14px;
-        width: 14px;
-        right: -14px;
-        border-bottom-left-radius: 14px;
+        height: 8px;
+        width: 8px;
+        right: -8px;
+        border-bottom-left-radius: 8px;
         bottom: 0;
         background-color: transparent;
-        box-shadow: -4px 4px 0 0 color-mix(in lch, var(--background-secondary) 40%, var(--background-tertiary));
+        box-shadow: -2px 2px 0 2px color-mix(in lch, var(--background-secondary) 40%, var(--background-tertiary));
     }
+
     &:before {
         content: "";
         position: absolute;
-        height: 14px;
-        width: 14px;
-        left: -14px;
-        border-bottom-right-radius: 14px;
+        height: 8px;
+        width: 8px;
+        left: -8px;
+        border-bottom-right-radius: 8px;
         bottom: 0;
         background-color: transparent;
-        box-shadow: 4px 4px 0 0 color-mix(in lch, var(--background-secondary) 40%, var(--background-tertiary));
+        box-shadow: 2px 2px 0 2px color-mix(in lch, var(--background-secondary) 40%, var(--background-tertiary));
     }
 `;
 
-const PopoutRenderer = (props: { messages: any, channel: any }) => {
-    const tabContext = useContext(TabContext);
+const PopoutSpacer = styled.span`
+    background-color: color-mix(in lch, var(--background-secondary) 40%, var(--background-tertiary));
+    border-radius: 8px 8px 0 0;
+    height: 8px;
+    width: 100%;
+`
+
+interface PopoutRendererProps {
+    tab: Tab,
+    tabRef: RefObject<HTMLElement>,
+    popoutContainerRef: MutableRefObject<HTMLDivElement | null>
+}
+
+const PopoutRenderer = (props: PopoutRendererProps) => {
+    const channel = ChannelStore.getChannel(props.tab.channelId);
+    const guild = props.tab.guildId && GuildStore.getGuild(props.tab.guildId);
+
+    const [loading, setIsLoading] = useState(false);
+
+    if (!channel) return (<></>)
+
+    const messages = useStateFromStores(
+        [MessageStore],
+        () => MessageStore.getMessages(channel.id),
+        [props.tab.channelId]
+    );
     
-    if (!tabContext) return (<></>);
-    
-    const oldestUnreadMessageId = useStateFromStores([UnreadStore], () => UnreadStore.getOldestUnreadMessageId(props.channel.id));
+
+    useEffect(() => {
+        if (!loading && messages.length === 0 && (messages.hasMoreBefore || messages.hasMoreAfter)) {
+            setIsLoading(true);
+
+            fetchMessages(props.tab.channelId).then(() => {
+                setIsLoading(false);
+                console.log("load done");
+            });
+        }
+    }, [loading, props.tab.channelId]);
+
+    const oldestUnreadMessageId = useStateFromStores(
+        [UnreadStore],
+        () => UnreadStore.getOldestUnreadMessageId(channel.id),
+        [props.tab.channelId]
+    );
 
     const channelStream = getChannelStream({
-        channel: props.channel,
-        messages: props.messages,
+        channel,
+        messages,
         oldestUnreadMessageId
     });
 
@@ -135,24 +189,25 @@ const PopoutRenderer = (props: { messages: any, channel: any }) => {
 
     return (
         <PopoutPreviewContainer
-            ref={tabContext.popoutRef}
+            ref={props.popoutContainerRef}
         >
-            <PinToBottomScroller
-                ref={tabContext?.scrollerRef}
+            <PopoutSpacer/>
+            <PopoutScrollingWrapper
                 contentClassName={Chat.scrollerContent}
                 onScroll={() => {
                 }}
                 onResize={() => {
                 }}
             >
-                <PopoutPreviewContent>
+                <PopoutPreviewContent className={"group-spacing-16"}>
                     {channelStream.map((item, index) => {
                         switch (item.type) {
                             case "NONE":
                                 return (
-                                    <EmptyMessage channel={props.channel}/>
+                                    <EmptyMessage channel={channel}/>
                                 )
                             case ChannelStreamItemTypes.DIVIDER:
+                                // divider_d5deea hasContent_d5deea divider_c2654d hasContent_c2654d
                                 return (
                                     <Divider
                                         cut={item.cut}
@@ -165,61 +220,61 @@ const PopoutRenderer = (props: { messages: any, channel: any }) => {
                                 return (
                                     <Message
                                         message={item.content}
-                                        channel={props.channel}
+                                        channel={channel}
                                         groupId={item.groupId}
-                                        id={`chat-messages-${props.channel.id}-${item.content.id}`}
+                                        id={`chat-messages-${channel.id}-${item.content.id}`}
                                     />
                                 )
                             case ChannelStreamItemTypes.THREAD_STARTER_MESSAGE:
                                 return (
                                     <ThreadStarterMessage
                                         message={item.content}
-                                        channel={props.channel}
+                                        channel={channel}
                                         groupId={item.groupId}
-                                        id={`chat-messages-${props.channel.id}-${item.content.id}`}
+                                        id={`chat-messages-${channel.id}-${item.content.id}`}
                                     />
                                 );
                         }
                     })}
                 </PopoutPreviewContent>
-            </PinToBottomScroller>
+            </PopoutScrollingWrapper>
             <ChatBoxComponent
-                channel={tabContext.channel}
-                guild={tabContext.guild}
-                chatInputType={chatInputTypes.OVERLAY}
+                channel={channel}
+                guild={guild}
+                chatInputType={tabChatInputType}
             />
         </PopoutPreviewContainer>
     )
 }
 
 export const TabPopout = (props: Props) => {
-    const messages = useStateFromStores(
-        [MessageStore],
-        () => MessageStore.getMessages(props.channel.id)
-    );
-
     useEffect(() => {
-        if (props.popoutOpen)
-            fetchMessages(props.channel.id);
+        if (!props.popoutOpen) props.popoutControlsRef.current = null;
     }, [props.popoutOpen]);
 
     return (
-        <Popout
-            position={"bottom"}
-            align={"center"}
-            renderPopout={(data: any) => {
-                console.log("popout data", data);
-                try {
-                    return (<PopoutRenderer messages={messages} channel={props.channel}/>)
-                } catch (err) {
-                    console.log(err);
-                    return (<div>Yeah it failed</div>);
-                }
-            }}
-            shouldShow={props.popoutOpen && !props.selected}
-            spacing={0}
-            onRequestClose={props.onRequestClose}
-            children={props.children}
-        />
+        <ClassNames>
+            {({css, cx}) => (
+                <Popout
+                    popoutClassName={css`
+                        transition: left 0.2s ease-in-out;
+                    `}
+                    position={"bottom"}
+                    align={"center"}
+                    renderPopout={(data: any) => {
+                        props.popoutControlsRef.current = data;
+                        return props.popoutTargetTab && props.popoutTargetRef && (
+                            <PopoutRenderer popoutContainerRef={props.popoutContainerRef} tab={props.popoutTargetTab}
+                                            tabRef={props.popoutTargetRef}/>)
+                    }}
+                    shouldShow={props.popoutOpen && !!props.popoutTargetTab}
+                    spacing={0}
+                    onRequestClose={props.onRequestClose}
+                    children={props.children}
+                    animation={"3"}
+                    popoutTargetElementRef={props.popoutTargetRef}
+                />
+            )}
+        </ClassNames>
     );
 };
