@@ -11,6 +11,8 @@ export interface PluginEventTypes {
     'tab-quickswitch-prev': [],
     'tab-quickswitch-current': [],
     
+    'tab-navigator': [],
+    
     'keybind-active': [keyof typeof PluginKeybindNames];
     'keybind-inactive': [keyof typeof PluginKeybindNames];
 }

@@ -79,8 +79,9 @@ export default class Plugin {
     }
     
     getSettingsPanel() {
-        return createElement(Menu, {
-            plugin: this
+        return createElement(PluginContext.Provider, {
+            value: this,
+            children: createElement(Menu)
         });
     }
     
@@ -94,6 +95,9 @@ export default class Plugin {
                 break;
             case 'quick-switch-current-tab':
                 this.events.dispatchEvent('tab-quickswitch-current');
+                break;
+            case 'tab-navigator':
+                this.events.dispatchEvent('tab-navigator');
                 break;
         }
     }

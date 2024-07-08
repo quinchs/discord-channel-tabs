@@ -12,7 +12,7 @@ import {
 } from "./tabsManager";
 import {Tab} from "./tab";
 import React, {MouseEvent, useContext, useEffect, useRef, useState} from "react";
-import {getOrCreatePrivateChannelForUser, resolveChannelIdFromGuildId, selectChannel} from "../discord";
+import {getOrCreatePrivateChannelForUser, Navigator, resolveChannelIdFromGuildId, selectChannel} from "../discord";
 import {DragDropContext, Draggable, Droppable, DropResult} from "react-beautiful-dnd";
 import Plugin, {PluginContext} from "../index";
 import {AddTabButton} from "./addTabButton";
@@ -20,6 +20,7 @@ import {ChannelStore} from "../discord/stores";
 import {PopoutControlsState, TabPopout} from "./tabPopout";
 import {combineDestructors} from "../utils/deconstructors";
 import {useSettings} from "../settings/useSettings";
+import {hookDiscordAction, QUICKSWITCHER_SHOW, QUICKSWITCHER_SWITCH_TO} from "../discord/actionLogger";
 
 type Props = {};
 
@@ -89,7 +90,7 @@ const TabBarArea = styled.section`
 
 export const TabBar = (props: Props) => {
     const plugin = useContext(PluginContext);
-    const settings = useSettings(plugin);
+    const settings = useSettings();
         
     const tabRefs = useRef<Map<string, HTMLElement | null>>(new Map);
     const dragTargetBounds = useRef<DOMRect | null>();
@@ -107,6 +108,7 @@ export const TabBar = (props: Props) => {
 
     useEffect(() => {
         return combineDestructors(
+            plugin.events.subscribe('tab-navigator', handleShowQuickSwitch),
             plugin.events.subscribe('request-tab-close', onTabClose),
             plugin.events.subscribe('request-tab-add', tab => {
                 setCurrentTab(tab);
@@ -349,6 +351,31 @@ export const TabBar = (props: Props) => {
         onTabNavigate(tab);
     }
 
+    const handleShowQuickSwitch = () => {
+        Navigator.QUICKSWITCHER_SHOW.action();
+
+        let cleanOnShown: Function;
+        let cleanOnSwitch: Function;
+
+        cleanOnShown = hookDiscordAction(QUICKSWITCHER_SHOW, () => {
+            console.log("Quick switch shown, but it wasn't us");
+            cleanOnSwitch();
+            cleanOnShown();
+        });
+
+        cleanOnSwitch = hookDiscordAction(QUICKSWITCHER_SWITCH_TO, (e: any) => {
+            console.log("Quick switch switched", e);
+
+            cleanOnSwitch();
+            cleanOnShown();
+
+            if (!e?.result?.type || !e.result.record) return;
+
+            const _ = onAddRequested(e.result.type, e.result.record);
+        })
+
+    }
+    
     return (
         <DragDropContext
             onBeforeDragStart={e => {
@@ -470,7 +497,7 @@ export const TabBar = (props: Props) => {
                                     ))}
                                     {providedDroppable.placeholder}
                                     <TabPlunger>
-                                        <AddTabButton onAdd={onAddRequested}/>
+                                        <AddTabButton onClick={handleShowQuickSwitch}/>
                                     </TabPlunger>
                                 </TabsContainer>
                             )}

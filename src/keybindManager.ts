@@ -52,6 +52,8 @@ export default class KeybindManager {
     }
     
     private handleKeystatesUpdated(event: KeyboardEvent) {
+        if (!this.plugin.settings.keybindsActive) return;
+        
         const comboMatchesState = (combo: KeyBind) => {
             for (const key of combo) {
                 if (!this.keystates.has(key[1])) return false;
@@ -67,8 +69,6 @@ export default class KeybindManager {
             
             return false;
         }
-        
-        console.log(this.parsedKeybinds, this.keystates);
         
         for (const keybind of this.parsedKeybinds) {
             if (comboMatchesState(keybind.combo)) {

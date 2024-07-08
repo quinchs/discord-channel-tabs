@@ -4,13 +4,13 @@ import {jsx} from '@emotion/react'
 import {useSettings} from "./useSettings";
 import styled from "@emotion/styled";
 import {FormHeader, FormInput, FormText, FormToggleSwitch, KeybindInput} from '../discord';
-import Plugin from "../index";
+import Plugin, {PluginContext} from "../index";
 import {PluginKeybindNames, PluginSettings} from "../settings";
 import {KeybindClassNames} from "../discord/keybinds";
 import {iterateKeys} from "../utils/typeUtils";
+import React, {useContext} from 'react';
 
 type Props = {
-    plugin: Plugin
 };
 
 const MenuContainer = styled.div`
@@ -33,7 +33,7 @@ const renderKeybinds = (settings: PluginSettings, plugin: Plugin) => {
 
     return iterateKeys(grouped).map(group => {
         return (
-            <div className={KeybindClassNames.keybindGroup}>
+            <>
                 <FormHeader tag={'h3'}>{group}</FormHeader>
                 {grouped[group]?.map(keybindIdentifier => {
                     const {summary, title} = PluginKeybindNames[keybindIdentifier];
@@ -51,13 +51,14 @@ const renderKeybinds = (settings: PluginSettings, plugin: Plugin) => {
                         </Row>
                     )
                 })}
-            </div>
+            </>
         )
     })
 }
 
-export const Menu = ({plugin}: Props) => {
-    const settings = useSettings(plugin);
+export const Menu = (props: Props) => {
+    const plugin = useContext(PluginContext);
+    const settings = useSettings();
 
     return (
         <MenuContainer>
@@ -77,6 +78,9 @@ export const Menu = ({plugin}: Props) => {
                 <FormInput
                     value={settings.popoutDelay.toString()}
                     onChange={value => {
+                        if(value === '' || value === 'NaN')
+                            value = '0';
+                        
                         settings.popoutDelay = Number.parseInt(value)
                         plugin.saveSettings(settings);
                     }}

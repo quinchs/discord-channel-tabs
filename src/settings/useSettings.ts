@@ -1,9 +1,9 @@
-﻿import Plugin from "../index";
-import {useEffect, useState} from "react";
+﻿import {PluginContext} from "../index";
+import {useContext, useEffect, useState} from "react";
 import {PluginSettings} from "../settings";
 
-export const useSettings: (plugin?: Plugin) => PluginSettings = (plugin?: Plugin) => {
-    plugin = plugin ?? BdApi.Plugins.get("quinchs-discord") as Plugin;
+export const useSettings: () => PluginSettings = () => {
+    const plugin = useContext(PluginContext);
     
     if (!plugin) throw new Error("Cannot find plugin");
     

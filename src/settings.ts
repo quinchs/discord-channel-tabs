@@ -1,6 +1,4 @@
 ﻿import {KeyBind} from "./discord";
-import {mapKeys} from "lodash";
-import {iterateKeys} from "./utils/typeUtils";
 
 export interface PluginSettings {
     keybinds: PluginKeybinds;
@@ -29,6 +27,11 @@ export const PluginKeybindNames = {
         group: "Quick Switch",
         title: "Current Tab",
         summary: "Selects the current open tab"
+    },
+    'tab-navigator': {
+        group: "Tab Bar",
+        title: "Open New Tab Navigator",
+        summary: "Opens the navigator for adding a new tab"
     }
 };
 
@@ -38,7 +41,25 @@ export type PluginKeybinds = {
 
 export const DefaultSettings: PluginSettings = {
     showPopouts: true,
-    keybinds: {},
+    keybinds: {
+        "tab-navigator": [
+            [
+                0,
+                162,
+                "0:0"
+            ],
+            [
+                0,
+                160,
+                "0:0"
+            ],
+            [
+                0,
+                75,
+                "0:0"
+            ]
+        ]
+    },
     popoutDelay: 600,
     keybindsActive: true
 }
