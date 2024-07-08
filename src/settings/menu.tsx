@@ -6,7 +6,6 @@ import styled from "@emotion/styled";
 import {FormHeader, FormInput, FormText, FormToggleSwitch, KeybindInput} from '../discord';
 import Plugin, {PluginContext} from "../index";
 import {PluginKeybindNames, PluginSettings} from "../settings";
-import {KeybindClassNames} from "../discord/keybinds";
 import {iterateKeys} from "../utils/typeUtils";
 import React, {useContext} from 'react';
 
@@ -26,6 +25,7 @@ const MenuControlsContainer = styled.div`
 const Row = styled.div`
     margin-bottom: 20px;
     padding-bottom: 20px;
+    box-shadow: inset 0 -1px 0 hsl(var(--primary-400-hsl)/.3)
 `
 
 const renderKeybinds = (settings: PluginSettings, plugin: Plugin) => {
@@ -38,7 +38,7 @@ const renderKeybinds = (settings: PluginSettings, plugin: Plugin) => {
                 {grouped[group]?.map(keybindIdentifier => {
                     const {summary, title} = PluginKeybindNames[keybindIdentifier];
                     return (
-                        <Row className={KeybindClassNames.row}>
+                        <Row>
                             <FormHeader tag={'legend'}>{title}</FormHeader>
                             <KeybindInput
                                 onChange={keybind => {
