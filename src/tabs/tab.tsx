@@ -8,7 +8,7 @@ import {
     MouseEvent,
     MutableRefObject,
     RefCallback,
-    RefObject, useEffect,
+    RefObject, useContext, useEffect,
     useRef,
     useState
 } from "react";
@@ -23,6 +23,9 @@ import {
 import {ChannelStore, GuildStore, UserStore} from "../discord/stores";
 import {TabPopout} from "./tabPopout";
 import {useStateFromStores} from "../discord";
+import {useSettings} from "../settings/useSettings";
+import {combineDestructors} from "../utils/deconstructors";
+import {PluginContext} from "../index";
 
 type Props = HTMLAttributes<HTMLDivElement> & {
     selected: boolean;
@@ -166,6 +169,9 @@ export interface TabContextType {
 }
 
 export const Tab = ({tab, ...props}: Props) => {
+    const plugin = useContext(PluginContext)
+    const settings = useSettings();
+    
     const tabContainerRef = useRef<HTMLSpanElement>(null);
     const tabElementRef = useRef<HTMLDivElement | null>(null);
 
@@ -180,7 +186,10 @@ export const Tab = ({tab, ...props}: Props) => {
     }
 
     useEffect(() => {
-        return resetTimerStates
+        return combineDestructors(
+            resetTimerStates,
+            plugin.events.subscribe('settings-updated', resetTimerStates)
+        )
     }, []);
 
     const onMouseEnter = (e: MouseEvent<HTMLDivElement>) => {
@@ -193,7 +202,7 @@ export const Tab = ({tab, ...props}: Props) => {
 
         openTimeoutId.current = setTimeout(() => {
             props.onRequestPopout();
-        }, 600);
+        }, settings.popoutDelay);
     }
 
     const onMouseLeave = (e: MouseEvent<HTMLDivElement>) => {

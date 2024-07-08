@@ -11,13 +11,16 @@ import {
     Tab as TabInfo
 } from "./tabsManager";
 import {Tab} from "./tab";
-import React, {MouseEvent, useEffect, useRef, useState} from "react";
-import {getOrCreatePrivateChannelForUser, resolveChannelIdFromGuildId, selectChannel} from "../discord";
+import React, {MouseEvent, useContext, useEffect, useRef, useState} from "react";
+import {getOrCreatePrivateChannelForUser, Navigator, resolveChannelIdFromGuildId, selectChannel} from "../discord";
 import {DragDropContext, Draggable, Droppable, DropResult} from "react-beautiful-dnd";
-import Plugin from "../index";
+import Plugin, {PluginContext} from "../index";
 import {AddTabButton} from "./addTabButton";
 import {ChannelStore} from "../discord/stores";
 import {PopoutControlsState, TabPopout} from "./tabPopout";
+import {combineDestructors} from "../utils/deconstructors";
+import {useSettings} from "../settings/useSettings";
+import {hookDiscordAction, QUICKSWITCHER_SHOW, QUICKSWITCHER_SWITCH_TO} from "../discord/actionLogger";
 
 type Props = {};
 
@@ -86,6 +89,9 @@ const TabBarArea = styled.section`
 `
 
 export const TabBar = (props: Props) => {
+    const plugin = useContext(PluginContext);
+    const settings = useSettings();
+        
     const tabRefs = useRef<Map<string, HTMLElement | null>>(new Map);
     const dragTargetBounds = useRef<DOMRect | null>();
 
@@ -94,90 +100,67 @@ export const TabBar = (props: Props) => {
     const [tabs, setTabs] = useState<TabInfo[]>([]);
     const [currentTab, setCurrentTab] = useState<TabInfo | null>(null);
     const [outlinedTab, setOutlinedTab] = useState<TabInfo | null>(null);
-    
+
     const popoutContainerRef = useRef<HTMLDivElement | null>(null);
     const popoutTargetRef = useRef<HTMLElement | null>(null);
     const [popoutTargetTab, setPopoutTargetTab] = useState<TabInfo | null>(null);
     const popoutControls = useRef<PopoutControlsState | null>(null);
 
     useEffect(() => {
-        const plugin = BdApi.Plugins.get("quinchs-discord")?.instance as Plugin | undefined;
-        if (!plugin) return;
+        return combineDestructors(
+            plugin.events.subscribe('tab-navigator', handleShowQuickSwitch),
+            plugin.events.subscribe('request-tab-close', onTabClose),
+            plugin.events.subscribe('request-tab-add', tab => {
+                setCurrentTab(tab);
+                selectChannel(tab.channelId, tab.guildId);
 
-        const onClose = plugin.onTabClose(onTabClose)
+                if (tabs.find(x => x.channelId === tab.channelId)) {
+                    return;
+                }
 
-        const onSelect = plugin.onTabSelectComplete(() => {
-            if (outlinedTab) {
-                onTabNavigate(outlinedTab);
-                setOutlinedTab(null);
-            }
-        });
-        
-        const onCurrentSelect = plugin.onCurrentTabSelect(() => {
-            if (currentTab) {
-                setOutlinedTab(currentTab);
-            }
-        })
-        
-        const onNext = plugin.onNextTabSelect(() => {
-            console.log("on next");
-            const target = outlinedTab ?? currentTab;
-            
-            const nextTab = !target 
-                ? tabs[tabs.length - 1]
-                : tabs[tabs.indexOf(target) + 1];
-            
-            console.log("next target", nextTab);
-            
-            if (!nextTab) return;
-            
-            setOutlinedTab(nextTab);
-        });
-        
-        const onPrev = plugin.onPreviousTabSelect(() => {
-            const target = outlinedTab ?? currentTab;
+                const newTabs = [...tabs, tab];
+                setTabs(newTabs);
+                saveTabsState(newTabs);
+            }),
+            plugin.events.subscribe('tab-quickswitch-complete', () => {
+                if (outlinedTab) {
+                    onTabNavigate(outlinedTab);
+                    setOutlinedTab(null);
+                }
+            }),
+            plugin.events.subscribe('tab-quickswitch-current', () => {
+                if (currentTab) {
+                    setOutlinedTab(currentTab);
+                }
+            }),
+            plugin.events.subscribe('tab-quickswitch-next', () => {
+                const target = outlinedTab ?? currentTab;
 
-            const nextTab = !target
-                ? tabs[0]
-                : tabs[tabs.indexOf(target) - 1];
+                const nextTab = !target
+                    ? tabs[tabs.length - 1]
+                    : tabs[tabs.indexOf(target) + 1];
+                
+                if (!nextTab) return;
 
-            console.log("next target", nextTab);
-            
-            if (!nextTab) return;
+                setOutlinedTab(nextTab);
+            }),
+            plugin.events.subscribe('tab-quickswitch-prev', () => {
+                const target = outlinedTab ?? currentTab;
 
-            setOutlinedTab(nextTab);
-        })
-        
-        const onAdd = plugin.onTabAdd(tab => {
-            setCurrentTab(tab);
-            selectChannel(tab.channelId, tab.guildId);
+                const nextTab = !target
+                    ? tabs[0]
+                    : tabs[tabs.indexOf(target) - 1];
+                
+                if (!nextTab) return;
 
-            if (tabs.find(x => x.channelId === tab.channelId)) {
-                return;
-            }
+                setOutlinedTab(nextTab);
+            }),
+            plugin.events.subscribe('location-switch', () => {
+                const matchingTab = tabs.find(x => isUriAtTab(window.location.pathname, x)) ?? null;
 
-            const newTabs = [...tabs, tab];
-            setTabs(newTabs);
-            saveTabsState(newTabs);
-        });
-
-        const onLocationChange = plugin.onLocationSwitch(() => {
-            // find the tab that matches the location
-            const matchingTab = tabs.find(x => isUriAtTab(window.location.pathname, x)) ?? null;
-
-            setCurrentTab(matchingTab);
-        });
-
-        return () => {
-            onAdd();
-            onSelect();
-            onNext();
-            onPrev();
-            onLocationChange();
-            onClose();
-            onCurrentSelect();
-        }
-
+                setCurrentTab(matchingTab);
+            })
+        )
     }, [tabs, currentTab, outlinedTab]);
 
     useEffect(() => {
@@ -354,7 +337,7 @@ export const TabBar = (props: Props) => {
 
     const handleTabRequestPopout = (tab: TabInfo) => {
         if (popoutTargetTab) return;
-        
+
         if (!tabs.find(x => x.channelId === tab.channelId)) return;
 
         popoutTargetRef.current = tabRefs.current.get(tab.channelId) ?? null;
@@ -368,6 +351,31 @@ export const TabBar = (props: Props) => {
         onTabNavigate(tab);
     }
 
+    const handleShowQuickSwitch = () => {
+        Navigator.QUICKSWITCHER_SHOW.action();
+
+        let cleanOnShown: Function;
+        let cleanOnSwitch: Function;
+
+        cleanOnShown = hookDiscordAction(QUICKSWITCHER_SHOW, () => {
+            console.log("Quick switch shown, but it wasn't us");
+            cleanOnSwitch();
+            cleanOnShown();
+        });
+
+        cleanOnSwitch = hookDiscordAction(QUICKSWITCHER_SWITCH_TO, (e: any) => {
+            console.log("Quick switch switched", e);
+
+            cleanOnSwitch();
+            cleanOnShown();
+
+            if (!e?.result?.type || !e.result.record) return;
+
+            const _ = onAddRequested(e.result.type, e.result.record);
+        })
+
+    }
+    
     return (
         <DragDropContext
             onBeforeDragStart={e => {
@@ -415,7 +423,7 @@ export const TabBar = (props: Props) => {
                         <TabPopout
                             popoutContainerRef={popoutContainerRef}
                             popoutControlsRef={popoutControls}
-                            popoutOpen={!!popoutTargetTab}
+                            popoutOpen={!!popoutTargetTab && settings.showPopouts}
                             popoutTargetRef={popoutTargetRef}
                             popoutTargetTab={popoutTargetTab}
                             onRequestClose={() => setPopoutTargetTab(null)}
@@ -489,7 +497,7 @@ export const TabBar = (props: Props) => {
                                     ))}
                                     {providedDroppable.placeholder}
                                     <TabPlunger>
-                                        <AddTabButton onAdd={onAddRequested}/>
+                                        <AddTabButton onClick={handleShowQuickSwitch}/>
                                     </TabPlunger>
                                 </TabsContainer>
                             )}
