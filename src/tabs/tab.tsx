@@ -129,9 +129,9 @@ const selectedCSS = css`
     }
 `
 
-const growStyles = (sz: number | undefined) => css`
+const growStyles = (sz: number | undefined, selected: boolean) => css`
     ${sz && css`
-        width: ${sz}px;
+        width: ${sz + (selected ? 20 : 0)}px;
     `}
 `
 
@@ -288,7 +288,7 @@ export const Tab = ({tab, ...props}: Props) => {
                 
                     ${props.outlined && TabElementOutlined}
                     ${props.popoutPresent && !props.isDragging && TabElementPopoutOpen};
-                    ${growStyles(tabWidth)};
+                    //${growStyles(tabWidth, props.selected)};
                     ${props.selected && !props.isDragging && !props.popoutPresent && selectedCSS};
                     ${props.isDragging && css`
                         background-color: #FFFFFF20;
