@@ -41,7 +41,7 @@ const TabElementHovered = css`
 `;
 
 const TabElementOutlined = css`
-    outline: 3px solid var(--indicator-selected-border)
+    outline: 3px solid var(--brand-360);
 `
 
 const TabElementPopoutOpen = css`
