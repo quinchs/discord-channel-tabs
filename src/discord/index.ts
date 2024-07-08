@@ -1,10 +1,10 @@
 ﻿import {byFuncString} from "../utils/moduleSearchFilters";
 import {
-    ComponentClass,
+    ComponentClass, CSSProperties,
     DetailedHTMLProps,
     ForwardRefExoticComponent, FunctionComponent, HTMLAttributes, MemoExoticComponent, MutableRefObject,
     PropsWithChildren,
-    PropsWithoutRef,
+    PropsWithoutRef, ReactNode, Ref,
     RefAttributes
 } from "react";
 
@@ -12,7 +12,7 @@ const messagesActor = BdApi.Webpack.getByKeys("jumpToMessage", "_sendMessage", {
 const privateChannelsActor = BdApi.Webpack.getByKeys("getOrEnsurePrivateChannel", {fatal: true})! as any;
 const channelsActor = BdApi.Webpack.getModule(BdApi.Webpack.Filters.byProps("selectChannel"))! as any;
 const guildsActor = BdApi.Webpack.getModule(BdApi.Webpack.Filters.byProps("transitionToGuildSync"))! as any;
-const common = BdApi.Webpack.getModule(BdApi.Webpack.Filters.byProps("PlusMediumIcon", "Shakeable", "List")) as any;
+export const commonUI = BdApi.Webpack.getModule(BdApi.Webpack.Filters.byProps("PlusMediumIcon", "Shakeable", "List")) as any;
 
 const guildChannelResolver = Object.values(BdApi.Webpack.getModule(
     byFuncString("shouldShowOnboarding", "getDefaultChannel"),
@@ -51,9 +51,9 @@ export const selectPrivateChannel = (
     channelsActor.selectPrivateChannel(channelId);
 }
 
-export const PlusIconMedium = common.PlusMediumIcon;
-export const PlusIconSmall = common.PlusSmallIcon;
-export const Popout = common.Popout as ComponentClass<{
+export const PlusIconMedium = commonUI.PlusMediumIcon;
+export const PlusIconSmall = commonUI.PlusSmallIcon;
+export const Popout = commonUI.Popout as ComponentClass<{
     shouldShow?: boolean,
     position?: "top" | "bottom" | "left" | "right" | "center" | "window_center",
     onRequestClose?: Function,
@@ -70,7 +70,7 @@ export const Popout = common.Popout as ComponentClass<{
     preload?: () => Promise<void>
 }>;
 
-export const PinToBottomScrollerAuto = common.PinToBottomScrollerAuto as ForwardRefExoticComponent<
+export const PinToBottomScrollerAuto = commonUI.PinToBottomScrollerAuto as ForwardRefExoticComponent<
     PropsWithChildren<{
         onResize: Function,
         onScroll: Function,
@@ -154,3 +154,70 @@ export const EmptyMessage = BdApi.Webpack.getByStrings(
     channel: any, 
     showingBanner?: boolean
 }>;
+
+export enum KeyCodeType {
+    KeyboardKey,
+    MouseButton,
+    KeyboardKeyModifier,
+    GamepadButton
+}
+
+export type KeyCode = [type: KeyCodeType, code: number, platform: number | string | null];
+export type KeyBind = KeyCode[];
+
+export const KeybindInput = BdApi.Webpack.getByStrings(
+    "inputCaptureRegisterElement", 
+    {fatal: true}
+)! as ComponentClass<{
+    disabled?: boolean, 
+    onChange: (value: KeyBind) => void;
+    defaultValue: KeyBind;
+}>;
+
+export const FormToggleSwitch = commonUI.FormSwitch as FunctionComponent<PropsWithChildren<{
+    value: boolean,
+    disabled?: boolean,
+    hideBorder?: boolean,
+    tooltipNode?: string,
+    onChange: (value: boolean) => void,
+    className?: string,
+    style?: CSSProperties,
+    note?: string
+}>>;
+
+export const FormText = BdApi.Webpack.getByStrings(
+    "DEFAULT", "SELECTABLE", "DISABLED", "disabled", "type", 
+    {searchExports: true}
+)! as FunctionComponent<PropsWithChildren<{ 
+    type?: "default" | "placeholder" | "description" | "labelBold" | "labelSelected" | "labelDescriptor" | "error" | "success",
+    disabled?: boolean,
+    selectable?: "modeDefault" | "modeDisabled" | "modeSelectable"
+}> & HTMLAttributes<HTMLElement>>
+
+
+export const FormHeader = BdApi.Webpack.getByStrings(
+    "legend", "h5", {searchExports: true, fatal: true}
+)! as FunctionComponent<PropsWithChildren<{
+    tag?: "legend" | "label" | string, 
+    faded?: boolean,
+    disabled?: boolean,
+    required?: boolean,
+    error?: any, 
+    errorId?: string,
+}> & HTMLAttributes<HTMLElement>>;
+
+export const FormInput = BdApi.Webpack.getByStrings(
+    "inputPrefix", "disabled", "editable", "onChange", "inputWrapper", 
+    {searchExports: true, fatal: true},
+)! as ComponentClass<{
+    inputClassName?: string,
+    onChange: (value: string) => void;
+    inputPrefix?: ReactNode,
+    disabled?: boolean, 
+    size?: string, 
+    editable?: boolean, 
+    inputRef?: Ref<HTMLInputElement>,
+    prefixElement?: ReactNode,
+    focusProps?: any, 
+    value?: string, 
+} & Omit<HTMLAttributes<HTMLInputElement>, 'onChange'>>;

@@ -1,4 +1,4 @@
-﻿import Plugin from "./index";
+﻿import Plugin, {PluginContext} from "./index";
 import {buildCloseTabsMenuItems, buildTabsContextMenuItems} from "./tabs/contextMenu";
 import {createElement} from "react";
 import {TabBar} from "./tabs/tabBar";
@@ -59,8 +59,6 @@ export const patchChatArea = (plugin: Plugin) => {
     if (!chatArea) return;
 
     return BdApi.Patcher.after("quinchs-tabs", chatArea, "render", (self: any, args: any, returnVal: any) => {
-        console.log("RENDER", self, args, returnVal);
-
         const target = BdApi.Utils.findInTree(
             returnVal,
             (prop: any) => prop?.className === chatName,
@@ -71,7 +69,12 @@ export const patchChatArea = (plugin: Plugin) => {
 
         if (!target) return;
 
-        target.children.unshift(createElement(TabBar))
+        target.children.unshift(
+            createElement(PluginContext.Provider, {
+                children: createElement(TabBar),
+                value: plugin
+            })
+        )
     });
 }
 
@@ -81,7 +84,7 @@ export const patchChannelMenu = (plugin: Plugin) => {
 
         if (props.tab) {
             menuElements = buildCloseTabsMenuItems(() => {
-                plugin.dispatchTabClose(props.tab)
+                plugin.events.dispatchEvent('request-tab-close', props.tab)
             })
         } else {
             menuElements = buildTabsContextMenuItems(plugin, returnValue, props);

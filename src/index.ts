@@ -1,87 +1,48 @@
 import {patchChannelMenu, patchChatArea, patchPopoutTargetElementRef} from "./injector";
 import {Tab} from "./tabs/tabsManager";
+import {createContext, createElement} from "react";
+import {Menu} from "./settings/menu";
+import {DefaultSettings, loadSettingsData, PluginKeybindNames, PluginSettings, saveSettingsData} from "./settings";
+import PluginEventBus from "./events";
+import KeybindManager from "./keybindManager";
 
 interface DynamicPatches {
     [id: string]: () => void;
 }
 
-export default class Plugin extends EventTarget {
-    patchesAppliedSuccessfully = false;
+export const PluginContext = createContext<Plugin>(null!);
 
-    patches: ((plugin: Plugin) => any | undefined)[] = [
+export default class Plugin {
+    private _settings: PluginSettings = loadSettingsData() ?? DefaultSettings;
+    private _events: PluginEventBus = new PluginEventBus();
+    private _keybindManager = new KeybindManager(this);
+    
+    private patchesAppliedSuccessfully = false;
+    private patches: ((plugin: Plugin) => any | undefined)[] = [
         patchChatArea,
         patchChannelMenu,
         patchPopoutTargetElementRef,
     ];
-    cleanUpFunctions: (() => void)[] = [];
-    dynamicPatches: DynamicPatches = {};
+    private cleanUpFunctions: (() => void)[] = [];
+    private dynamicPatches: DynamicPatches = {};
     
-    dispatchTabAdd(tab: Tab) {
-        this.dispatchEvent(new CustomEvent('tab-add', {
-            detail: tab
-        }))
-    }
-
-    dispatchTabClose(tab: Tab) {
-        this.dispatchEvent(new CustomEvent('tab-close', {
-            detail: tab
-        }));
-    }
-
-    onTabAdd(handler: (tab: Tab) => void): () => void {
-        // @ts-ignore
-        const listener = evt => handler(evt.detail);
-        this.addEventListener('tab-add', listener)
-        return () => this.removeEventListener('tab-add', listener);
-    }
-
-    onTabClose(handler: (tab: Tab) => void): () => void {
-        // @ts-ignore
-        const listener = evt => handler(evt.detail);
-
-        this.addEventListener('tab-close', listener);
-        return () => this.removeEventListener('tab-close', listener);
-    }
-
-    onLocationSwitch(handler: () => void): () => void {
-        this.addEventListener('location-switch', handler)
-        return () => this.removeEventListener('location-switch', handler);
-    }
-
-    onTabSelectComplete(handler: () => void): () => void {
-        this.addEventListener('tab-select-complete', handler)
-        return () => this.removeEventListener('tab-select-complete', handler);
+    get settings(): PluginSettings {
+        return this._settings;
     }
     
-    onNextTabSelect(handler: () => void): () => void {
-        this.addEventListener('next-tab-select', handler);
-        return () => this.removeEventListener('next-tab-select', handler);
+    get events(): PluginEventBus {
+        return this._events;
     }
     
-    onPreviousTabSelect(handler: () => void): () => void {
-        this.addEventListener('previous-tab-select', handler);
-        return () => this.removeEventListener('previous-tab-select', handler);
+    constructor() {
+        this.handleKeybindActive = this.handleKeybindActive.bind(this);
+        this.handleKeybindInactive = this.handleKeybindInactive.bind(this);
     }
     
-    onCurrentTabSelect(handler: () => void): () => void {
-        this.addEventListener('current-tab-select', handler);
-        return () => this.removeEventListener('current-tab-select', handler);
-    }
-    
-    dispatchCurrentTabSelect() {
-        this.dispatchEvent(new Event('current-tab-select'));
-    }
-    
-    dispatchPreviousTabSelect() {
-        this.dispatchEvent(new Event('previous-tab-select'));
-    }
-    
-    dispatchNextTabSelect() {
-        this.dispatchEvent(new Event('next-tab-select'));
-    }
-    
-    dispatchTabSelectComplete() {
-        this.dispatchEvent(new Event('tab-select-complete'));
+    saveSettings(newSettings: PluginSettings) {
+        saveSettingsData(newSettings);
+        this._settings = newSettings;
+        this.events.dispatchEvent('settings-updated', this._settings);
     }
     
     addDynamicPatch(id: string, patcher: () => (() => void) | undefined) {
@@ -91,54 +52,55 @@ export default class Plugin extends EventTarget {
     }
     
     start() {
-        this.handleKeyDown = this.handleKeyDown.bind(this);
-        this.handleKeyUp = this.handleKeyUp.bind(this);
-        
+        this._keybindManager.register();
         this.patchesAppliedSuccessfully = this.applyPatches(...this.patches);
-        document.addEventListener("keydown", this.handleKeyDown);
-        document.addEventListener("keyup", this.handleKeyUp)
+        
+        this.events.addEventListener('keybind-active', this.handleKeybindActive);
+        this.events.addEventListener('keybind-inactive', this.handleKeybindInactive);
     }
 
     stop() {
+        this._keybindManager.unregister();
+        
         this.cleanUpFunctions.forEach(x => x());
         for (const id in this.dynamicPatches) {
             this.dynamicPatches[id]?.();
         }
         BdApi.Patcher.unpatchAll('quinchs-tabs');
-        document.removeEventListener('keydown', this.handleKeyDown);
-        document.removeEventListener('keyup', this.handleKeyUp);
     }
     
-    handleKeyUp(event: KeyboardEvent) {
-        if (event.key === "Control") {
-            this.dispatchTabSelectComplete();
-        }
-    }
-    
-    handleKeyDown(event: KeyboardEvent) {
-        if (event.ctrlKey) {
-            switch (event.key) {
-                case "a":
-                    this.dispatchPreviousTabSelect();
-                    event.preventDefault();
-                    return;
-                case "d":
-                    this.dispatchNextTabSelect();
-                    event.preventDefault();
-                    return;
-                case "w":
-                    this.dispatchCurrentTabSelect();
-                    event.preventDefault();
-                    return;
-            }
-        }
-    }
-
     onSwitch() {
-        this.dispatchEvent(new Event('location-switch'));
+        this.events.dispatchEvent('location-switch');
+        //this.dispatchEvent(new Event('location-switch'));
 
         if (!this.patchesAppliedSuccessfully) {
             this.patchesAppliedSuccessfully = this.applyPatches(...this.patches);
+        }
+    }
+    
+    getSettingsPanel() {
+        return createElement(Menu, {
+            plugin: this
+        });
+    }
+    
+    private handleKeybindActive(id: keyof typeof PluginKeybindNames) {
+        switch (id) {
+            case "quick-switch-next-tab":
+                this.events.dispatchEvent('tab-quickswitch-next');
+                break;
+            case 'quick-switch-prev-tab':
+                this.events.dispatchEvent('tab-quickswitch-prev');
+                break;
+            case 'quick-switch-current-tab':
+                this.events.dispatchEvent('tab-quickswitch-current');
+                break;
+        }
+    }
+    
+    private handleKeybindInactive(id: keyof typeof PluginKeybindNames) {
+        if (id === 'quick-switch-start') {
+            this.events.dispatchEvent('tab-quickswitch-complete');
         }
     }
 

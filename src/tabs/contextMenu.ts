@@ -24,15 +24,15 @@ export const buildTabsContextMenuItems = (plugin: Plugin, menu: any, props: any)
                 if (props.user) {
                     const dmChannelId = await getOrCreatePrivateChannelForUser(props.user.id);
 
-                    plugin.dispatchTabAdd({
+                    plugin.events.dispatchEvent('request-tab-add', {
                         channelId: dmChannelId,
                         name: props.user.globalName ?? props.user.username,
                         userId: props.user.id
-                    });
+                    })
                 } else if (props.channel) {
                     const tab = createTabFromChannel(props.channel);
                     if (!tab) return;
-                    plugin.dispatchTabAdd(tab);
+                    plugin.events.dispatchEvent('request-tab-add', tab)
                 }
             }
         }]

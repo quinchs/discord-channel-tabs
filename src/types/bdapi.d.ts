@@ -1402,7 +1402,7 @@ declare namespace WebpackModule {
 
         getByStrings(...filter: (string | WebpackAsyncModuleSearchOptions)[]): any | null;
 
-        getAllByStrings(...query: string[]): any | null;
+        getAllByStrings(...query: (string | WebpackModuleSearchOptions)[]): any | null;
 
         getStore(store: string): any;
     }
