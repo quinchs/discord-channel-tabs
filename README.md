@@ -25,3 +25,4 @@ this will build the plugin and move it to your plugins directory on Better Disco
 ### Known bugs
 - navigating to a non chat area on discord (Friends, Nitro, etc) and navigating away will cause tabs to be hidden
 - keybinds for right-side controls (right alt, right control, etc) will simply just not work
+- there is no overflow handling: tabs will not shrink and you cannot scroll the tab bar
